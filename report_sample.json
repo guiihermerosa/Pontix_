@@ -1,0 +1,97 @@
+﻿{
+    "ret":  "getreport",
+    "result":  true,
+    "sn":  "AYTE21057280",
+    "enrollid":  6,
+    "name":  "Guilherme Brito",
+    "department":  "",
+    "shift":  "0",
+    "date":  ":3-8-2026~5-8-2026",
+    "days":  [
+                 {
+                     "day":  "08-03",
+                     "week":  "SEG",
+                     "time":  [
+                                  "",
+                                  "",
+                                  "",
+                                  "",
+                                  "",
+                                  ""
+                              ],
+                     "flag":  [
+                                  16843009,
+                                  16843009,
+                                  16843009,
+                                  16843009,
+                                  16843009,
+                                  16843009
+                              ],
+                     "fatten":  "0.0",
+                     "fact_atten":  "0.0",
+                     "dayot":  "0.0",
+                     "daylate":  "0",
+                     "dayLeaveearly":  "0"
+                 },
+                 {
+                     "day":  "08-04",
+                     "week":  "TER",
+                     "time":  [
+                                  "",
+                                  "",
+                                  "",
+                                  "",
+                                  "",
+                                  ""
+                              ],
+                     "flag":  [
+                                  16843009,
+                                  16843009,
+                                  16843009,
+                                  16843009,
+                                  16843009,
+                                  16843009
+                              ],
+                     "fatten":  "0.0",
+                     "fact_atten":  "0.0",
+                     "dayot":  "0.0",
+                     "daylate":  "0",
+                     "dayLeaveearly":  "0"
+                 },
+                 {
+                     "day":  "08-05",
+                     "week":  "QUA",
+                     "time":  [
+                                  "",
+                                  "",
+                                  "",
+                                  "",
+                                  "",
+                                  ""
+                              ],
+                     "flag":  [
+                                  16843009,
+                                  16843009,
+                                  16843009,
+                                  16843009,
+                                  16843009,
+                                  16843009
+                              ],
+                     "fatten":  "0.0",
+                     "fact_atten":  "0.0",
+                     "dayot":  "0.0",
+                     "daylate":  "0",
+                     "dayLeaveearly":  "0"
+                 }
+             ],
+    "work_hour":  " ",
+    "atten_hour":  " ",
+    "work_days":  "",
+    "absent_days":  "",
+    "std_ot_hour":  "",
+    "ot_hour":  " ",
+    "late_minute":  " ",
+    "late_times":  "",
+    "leave_minute":  " ",
+    "leave_times":  ""
+}

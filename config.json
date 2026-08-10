@@ -1,0 +1,177 @@
+{
+  "device_ip": "192.168.0.15",
+  "device_port": 80,
+  "device_password": "2319",
+  "company_name": "Sup Mercado Santa Clara",
+  "vendor_name": "GRB Tecnologia",
+  "logo_path": "",
+  "output_dir": "relatorios",
+  "turnos_config": [
+    {
+      "sections": [
+        {
+          "active": true
+        },
+        {
+          "active": true
+        },
+        {
+          "active": false
+        }
+      ]
+    },
+    {
+      "sections": [
+        {
+          "active": true
+        },
+        {
+          "active": true
+        },
+        {
+          "active": true
+        }
+      ]
+    },
+    {
+      "sections": [
+        {
+          "active": true
+        },
+        {
+          "active": true
+        },
+        {
+          "active": true
+        }
+      ]
+    },
+    {
+      "sections": [
+        {
+          "active": true
+        },
+        {
+          "active": true
+        },
+        {
+          "active": true
+        }
+      ]
+    },
+    {
+      "sections": [
+        {
+          "active": true
+        },
+        {
+          "active": true
+        },
+        {
+          "active": true
+        }
+      ]
+    },
+    {
+      "sections": [
+        {
+          "active": true
+        },
+        {
+          "active": true
+        },
+        {
+          "active": true
+        }
+      ]
+    },
+    {
+      "sections": [
+        {
+          "active": true
+        },
+        {
+          "active": true
+        },
+        {
+          "active": true
+        }
+      ]
+    },
+    {
+      "sections": [
+        {
+          "active": true
+        },
+        {
+          "active": true
+        },
+        {
+          "active": true
+        }
+      ]
+    }
+  ],
+  "notificacoes_ativas": false,
+  "intervalo_notificacao_segundos": 60,
+  "coleta_retrospectiva_dias": 7,
+  "regras_ponto": {
+    "banco_horas": {
+      "ativo": true,
+      "limite_minutos": 0,
+      "validade_dias": 30,
+      "compensacao_minutos": 0
+    },
+    "horas_extras": {
+      "ativo": false,
+      "percentual_50": 50,
+      "percentual_70": 70,
+      "percentual_100": 100,
+      "domingos_percentual": 100,
+      "feriados_percentual": 100,
+      "noturnas_percentual": 70
+    },
+    "adicional_noturno": {
+      "ativo": false,
+      "inicio": "22:00",
+      "fim": "05:00",
+      "percentual": 20
+    },
+    "tolerancias": {
+      "entrada_minutos": 5,
+      "saida_minutos": 7
+    },
+    "intervalo": {
+      "minimo_minutos": 0,
+      "maximo_minutos": 0,
+      "avisar": true
+    },
+    "feriados": [
+      {
+        "data": "01-01",
+        "nome": "Confraternizacao Universal",
+        "tipo": "nacional",
+        "ativo": true
+      }
+    ],
+    "escalas": [
+      {
+        "nome": "Escala A",
+        "descricao": "TESTE",
+        "funcionarios": [
+          5
+        ]
+      },
+      {
+        "nome": "Escala B",
+        "descricao": "",
+        "funcionarios": []
+      },
+      {
+        "nome": "Escala C",
+        "descricao": "",
+        "funcionarios": []
+      }
+    ]
+  }
+}
