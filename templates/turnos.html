@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}Turnos • {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="cartao">
+  <div class="section-head">
+    <div class="page-title">
+      <span class="chip">Regras de jornada</span>
+      <h1>Gerenciamento de turnos</h1>
+      <p class="subtitulo">
+        Organize até oito turnos com três faixas por turno, mantendo os mesmos campos que o leitor já espera.
+      </p>
+    </div>
+    <span class="dashboard-live-badge">{% if shifts %}{{ shifts|length }} turno(s) carregados{% else %}Sem turnos visíveis{% endif %}</span>
+  </div>
+
+  {% if erro %}
+    <div class="cartao cartao-alerta mt-4">
+      <strong>{{ erro }}</strong>
+    </div>
+  {% endif %}
+</section>
+
+<form method="post" class="section-stack">
+  {% for turno in shifts %}
+    {% set shift_index = loop.index %}
+    <section class="cartao stack-gap">
+      <div class="section-head">
+        <div>
+          <span class="chip">Turno {{ shift_index }}</span>
+          <h2>{{ turno.display_name }}</h2>
+          <p class="subtitulo">Configure nome, corte e as três faixas de marcação.</p>
+        </div>
+        <span class="dashboard-live-badge">{{ turno.faixas_ativas }} faixa(s) ativa(s)</span>
+      </div>
+
+      <div class="field-grid-2">
+        <label class="campo">
+          Nome do turno
+          <input type="text" name="shift_{{ shift_index }}_name" value="{{ turno.name }}">
+        </label>
+        <label class="campo">
+          Corte do turno
+          <input type="time" name="shift_{{ shift_index }}_cutoftime" value="{{ turno.cutoftime }}">
+        </label>
+      </div>
+
+      <div class="section-grid">
+        {% for secao in turno.sections %}
+          {% set sec_index = loop.index %}
+          <div class="mini-card stack-gap">
+            <div class="section-head">
+              <strong>Faixa {{ sec_index }}</strong>
+              <label class="check-row">
+                <input type="checkbox" name="shift_{{ shift_index }}_section_{{ sec_index }}_active" {% if not secao.is_vazia %}checked{% endif %}>
+                Ativa
+              </label>
+            </div>
+            <div class="field-grid-2">
+              <label class="campo">
+                Início
+                <input type="time" name="shift_{{ shift_index }}_section_{{ sec_index }}_start" value="{{ secao.start }}">
+              </label>
+              <label class="campo">
+                Fim
+                <input type="time" name="shift_{{ shift_index }}_section_{{ sec_index }}_end" value="{{ secao.end }}">
+              </label>
+            </div>
+            <label class="campo">
+              Tipo
+              <select name="shift_{{ shift_index }}_section_{{ sec_index }}_type">
+                <option value="0" {% if secao.type == 0 %}selected{% endif %}>Normal</option>
+                <option value="1" {% if secao.type == 1 %}selected{% endif %}>Entrada</option>
+                <option value="2" {% if secao.type == 2 %}selected{% endif %}>Saída</option>
+              </select>
+            </label>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endfor %}
+
+  <section class="cartao">
+    <div class="actions-row">
+      <button class="botao botao-principal" type="submit">Salvar turnos</button>
+      <a class="botao botao-secundario" href="{{ url_for('funcionarios') }}">Ir para funcionários</a>
+    </div>
+  </section>
+</form>
+{% endblock %}

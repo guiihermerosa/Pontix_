@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% block title %}Conferencia â€¢ {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="cartao">
+  <div class="section-head">
+    <div class="page-title">
+      <span class="chip">Operacao e ajustes</span>
+      <h1>Conferencia operacional</h1>
+      <p class="subtitulo">Filtre por periodo, departamento ou turno para revisar marcacoes e corrigir divergencias com rapidez.</p>
+    </div>
+    <div class="actions-row">
+      <a class="botao botao-secundario" href="{{ url_for('conferencia_exportar', formato='csv', inicio=filtro.inicio, fim=filtro.fim, q=filtro.q, departamento=filtro.departamento, turno=filtro.turno) }}">CSV</a>
+      <a class="botao botao-secundario" href="{{ url_for('conferencia_exportar', formato='xlsx', inicio=filtro.inicio, fim=filtro.fim, q=filtro.q, departamento=filtro.departamento, turno=filtro.turno) }}">XLSX</a>
+      <a class="botao botao-secundario" href="{{ url_for('conferencia_exportar', formato='pdf', inicio=filtro.inicio, fim=filtro.fim, q=filtro.q, departamento=filtro.departamento, turno=filtro.turno) }}">PDF</a>
+    </div>
+  </div>
+
+  <form method="get" class="field-grid-3 mt-4">
+    <label class="campo">
+      Pesquisa
+      <input type="text" name="q" value="{{ filtro.q }}" placeholder="Nome, matricula ou departamento">
+    </label>
+    <label class="campo">
+      Departamento
+      <input type="text" name="departamento" value="{{ filtro.departamento }}">
+    </label>
+    <label class="campo">
+      Turno
+      <input type="text" name="turno" value="{{ filtro.turno }}">
+    </label>
+    <label class="campo">
+      Data inicial
+      <input type="date" name="inicio" value="{{ filtro.inicio }}">
+    </label>
+    <label class="campo">
+      Data final
+      <input type="date" name="fim" value="{{ filtro.fim }}">
+    </label>
+    <div class="actions-row" style="align-items:flex-end;">
+      <button class="botao botao-principal" type="submit">Aplicar filtros</button>
+      <a class="botao botao-terciario" href="{{ url_for('conferencia') }}">Limpar</a>
+    </div>
+  </form>
+
+  {% if alertas %}
+    <div class="stack-gap mt-4">
+      {% for alerta in alertas %}
+        <div class="cartao cartao-alerta">
+          <strong>{{ alerta }}</strong>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+
+<section class="dashboard-grid">
+  <div class="dashboard-card"><span>Registros</span><strong>{{ totais.registros }}</strong></div>
+  <div class="dashboard-card"><span>Entradas</span><strong>{{ totais.entradas }}</strong></div>
+  <div class="dashboard-card"><span>Saidas</span><strong>{{ totais.saidas }}</strong></div>
+  <div class="dashboard-card"><span>Pendentes</span><strong>{{ totais.pendentes }}</strong></div>
+</section>
+
+<section class="section-grid">
+  <div class="cartao">
+    <div class="section-head">
+      <div>
+        <h2>Resumo por departamento</h2>
+        <p class="subtitulo">Volume de marcacoes por area com entradas e saidas agregadas.</p>
+      </div>
+    </div>
+
+    {% if departamentos %}
+      <div class="table-wrap">
+        <table class="tabela-clean">
+          <thead>
+            <tr>
+              <th>Departamento</th>
+              <th>Registros</th>
+              <th>Entradas</th>
+              <th>Saidas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for depto in departamentos %}
+              <tr>
+                <td>{{ depto.name }}</td>
+                <td>{{ depto.total }}</td>
+                <td>{{ depto.entradas }}</td>
+                <td>{{ depto.saidas }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Nenhum departamento encontrado para os filtros aplicados.</p>
+    {% endif %}
+  </div>
+
+  <div class="cartao">
+    <div class="section-head">
+      <div>
+        <h2>Turnos encontrados</h2>
+        <p class="subtitulo">Contexto de jornada disponivel para o periodo filtrado.</p>
+      </div>
+    </div>
+
+    {% if turnos %}
+      <div class="list-stack">
+        {% for turno in turnos %}
+          <div class="mini-card">
+            <strong>{{ turno.name or turno.display_name }}</strong>
+            <p class="subtitulo">{{ turno.sections|length }} faixa(s) â€¢ corte {{ turno.cutoftime or '--:--' }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">Nenhum turno retornado pelo leitor.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="cartao">
+  <div class="section-head">
+    <div>
+      <h2>Conferencias por funcionario</h2>
+      <p class="subtitulo">Cada cartao exibe a linha do tempo do colaborador e permite ajuste rapido das marcacoes.</p>
+    </div>
+  </div>
+
+  {% if conferencias %}
+    <div class="list-stack">
+      {% for item in conferencias %}
+        <article class="cartao mini-card stack-gap">
+          <div class="section-head">
+            <div>
+              <span class="chip">{{ item.department or 'Sem departamento' }}</span>
+              <h3>{{ item.name or item.enrollid }}</h3>
+              <p class="subtitulo">Matricula {{ item.enrollid or '-' }} â€¢ {{ item.shift_name or 'Sem turno' }}</p>
+            </div>
+            <span class="dashboard-live-badge">
+              {{ item.total }} registro(s)
+              {% if item.pendente %} â€¢ pendente de saida{% endif %}
+            </span>
+          </div>
+
+          <div class="timeline">
+            {% for registro in (item['items'] or [])[-6:] %}
+              <div class="timeline-item">
+                <div class="section-head">
+                  <div>
+                    <strong>{{ registro.acao or 'Registro' }}</strong>
+                    <small>{{ fmt_data(registro.data or filtro.inicio) }} â€¢ {{ fmt_hora(registro.hora or '--:--:--') }} â€¢ {{ registro.source or 'local' }}</small>
+                  </div>
+                  <span class="chip">{{ registro.signature or registro.enrollid }}</span>
+                </div>
+                <p>{{ registro.note or registro.observacao_ajuste or 'Sem observacao' }}</p>
+
+                {% if registro.signature %}
+                  <form method="post" action="{{ url_for('conferencia_ajustar') }}" class="field-grid-3 mt-4">
+                    <input type="hidden" name="original_signature" value="{{ registro.signature }}">
+                    <input type="hidden" name="redirect_to" value="{{ request.url }}">
+                    <label class="campo">
+                      Ajustar para
+                      <select name="acao">
+                        <option value="Entrada">Entrada</option>
+                        <option value="Saida">Saida</option>
+                      </select>
+                    </label>
+                    <label class="campo">
+                      Observacao
+                      <input type="text" name="observacao" placeholder="Ex.: correcao manual">
+                    </label>
+                    <div class="actions-row" style="align-items:flex-end;">
+                      <button class="botao botao-secundario" type="submit">Salvar ajuste</button>
+                    </div>
+                  </form>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+    <div class="actions-row" style="justify-content:space-between; margin-top: 1rem;">
+      <div class="chip">Pagina {{ paginacao.page }} de {{ paginacao.pages }} - {{ paginacao.total }} registro(s)</div>
+      <div class="actions-row">
+        {% if paginacao.has_prev %}
+          <a class="botao botao-terciario" href="{{ url_for('conferencia', q=filtro.q, departamento=filtro.departamento, turno=filtro.turno, inicio=filtro.inicio, fim=filtro.fim, page=paginacao.prev_page, per_page=paginacao.per_page) }}">Anterior</a>
+        {% endif %}
+        {% if paginacao.has_next %}
+          <a class="botao botao-secundario" href="{{ url_for('conferencia', q=filtro.q, departamento=filtro.departamento, turno=filtro.turno, inicio=filtro.inicio, fim=filtro.fim, page=paginacao.next_page, per_page=paginacao.per_page) }}">Proxima</a>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p class="empty-state">Nenhuma conferencia encontrada para os filtros aplicados.</p>
+  {% endif %}
+</section>
+{% endblock %}

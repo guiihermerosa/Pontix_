@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% block title %}Perfil do funcionário • {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="cartao">
+  <div class="section-head">
+    <div class="page-title">
+      <span class="chip">Cadastro individual</span>
+      <h1>{{ funcionario.name or ('Funcionário ' ~ funcionario.enrollid) }}</h1>
+      <p class="subtitulo">
+        Matrícula {{ funcionario.enrollid }} • {{ funcionario.department or 'Sem departamento' }} •
+        {{ funcionario.shift_name or 'Sem turno' }}
+      </p>
+    </div>
+    <div class="actions-row">
+      <a class="botao botao-secundario" href="{{ url_for('funcionario_exportar', enrollid=funcionario.enrollid, formato='xlsx') }}">Exportar XLSX</a>
+      <a class="botao botao-secundario" href="{{ url_for('funcionario_exportar', enrollid=funcionario.enrollid, formato='pdf') }}">Exportar PDF</a>
+      <a class="botao botao-terciario" href="{{ url_for('funcionarios') }}">Voltar à lista</a>
+    </div>
+  </div>
+</section>
+
+<section class="section-grid">
+  <form method="post" class="cartao stack-gap">
+    <div class="section-head">
+      <div>
+        <h2>Dados extras</h2>
+        <p class="subtitulo">CPF, PIS, CTPS e data de admissão armazenados localmente.</p>
+      </div>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo">
+        CPF
+        <input type="text" name="cpf" value="{{ cpf }}">
+      </label>
+      <label class="campo">
+        PIS
+        <input type="text" name="pis" value="{{ pis }}">
+      </label>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo">
+        CTPS
+        <input type="text" name="ctps" value="{{ ctps }}">
+      </label>
+      <label class="campo">
+        Data de admissão
+        <input type="date" name="data_admissao" value="{{ data_admissao }}">
+      </label>
+    </div>
+
+    <div class="actions-row">
+      <button class="botao botao-principal" type="submit">Salvar dados</button>
+    </div>
+  </form>
+
+  <div class="cartao mini-card stack-gap">
+    <div class="section-head">
+      <div>
+        <h2>Ação de segurança</h2>
+        <p class="subtitulo">Remova a face cadastrada diretamente do leitor quando necessário.</p>
+      </div>
+    </div>
+    <form method="post" action="{{ url_for('funcionarios_remover_face', enrollid=funcionario.enrollid) }}" onsubmit="return confirm('Remover a face deste funcionário?');">
+      <button class="botao botao-perigo" type="submit">Remover face</button>
+    </form>
+  </div>
+
+  <div class="cartao stack-gap">
+    <div class="section-head">
+      <div>
+        <h2>Cadastro facial</h2>
+        <p class="subtitulo">Use o equipamento para iniciar, acompanhar ou cancelar o cadastro da face.</p>
+      </div>
+    </div>
+
+    <div class="mini-card stack-gap">
+      <div id="face-status" class="dashboard-live-badge">Status não consultado</div>
+      <p class="subtitulo">Posicione a pessoa na frente da câmera do leitor antes de iniciar o cadastro facial.</p>
+      <div class="actions-row">
+        <button class="botao botao-secundario" type="button" id="face-start">Iniciar cadastro</button>
+        <button class="botao botao-terciario" type="button" id="face-refresh">Atualizar status</button>
+        <button class="botao botao-perigo" type="button" id="face-cancel">Cancelar cadastro</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-grid">
+  <form method="post" action="{{ url_for('funcionario_atestado_upload', enrollid=funcionario.enrollid) }}" enctype="multipart/form-data" class="cartao stack-gap">
+    <div class="section-head">
+      <div>
+        <h2>Anexar atestado</h2>
+        <p class="subtitulo">Aceita PDF, JPG, PNG, DOC e DOCX.</p>
+      </div>
+    </div>
+
+    <label class="campo">
+      Arquivo
+      <input type="file" name="arquivo" required>
+    </label>
+    <div class="field-grid-2">
+      <label class="campo">
+        Emissão
+        <input type="date" name="data_emissao">
+      </label>
+      <label class="campo">
+        Validade até
+        <input type="date" name="validade_ate">
+      </label>
+    </div>
+    <label class="campo">
+      Observações
+      <textarea name="observacoes" rows="4"></textarea>
+    </label>
+
+    <button class="botao botao-principal" type="submit">Salvar atestado</button>
+  </form>
+
+  <form method="post" action="{{ url_for('funcionario_afastamento_upload', enrollid=funcionario.enrollid) }}" class="cartao stack-gap">
+    <div class="section-head">
+      <div>
+        <h2>Registrar afastamento</h2>
+        <p class="subtitulo">Licença, férias, atestado ou qualquer outro período de afastamento.</p>
+      </div>
+    </div>
+
+    <label class="campo">
+      Tipo
+      <input type="text" name="tipo" placeholder="Ex.: férias, licença, atestado">
+    </label>
+    <div class="field-grid-2">
+      <label class="campo">
+        Início
+        <input type="date" name="data_inicio">
+      </label>
+      <label class="campo">
+        Fim
+        <input type="date" name="data_fim">
+      </label>
+    </div>
+    <label class="campo">
+      Observações
+      <textarea name="observacoes" rows="4"></textarea>
+    </label>
+
+    <button class="botao botao-principal" type="submit">Salvar afastamento</button>
+  </form>
+</section>
+
+<section class="section-grid">
+  <div class="cartao">
+    <div class="section-head">
+      <div>
+        <h2>Atestados</h2>
+        <p class="subtitulo">Arquivos vinculados ao colaborador.</p>
+      </div>
+    </div>
+
+    {% if atestados %}
+      <div class="list-stack">
+        {% for atestado in atestados %}
+          <article class="timeline-item">
+            <div class="section-head">
+              <div>
+                <strong>{{ atestado.nome_original }}</strong>
+                <small>{{ fmt_data(atestado.data_emissao) or 'Sem emissão' }} • {{ fmt_data(atestado.validade_ate) or 'Sem validade' }}</small>
+              </div>
+              <div class="actions-row">
+                <a class="botao botao-secundario" href="{{ url_for('funcionario_atestado_download', enrollid=funcionario.enrollid, atestado_id=atestado.id) }}">Baixar</a>
+                <form method="post" action="{{ url_for('funcionario_atestado_excluir', enrollid=funcionario.enrollid, atestado_id=atestado.id) }}" onsubmit="return confirm('Excluir este atestado?');">
+                  <button class="botao botao-terciario" type="submit">Excluir</button>
+                </form>
+              </div>
+            </div>
+            <p>{{ atestado.observacoes or 'Sem observações.' }}</p>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">Nenhum atestado anexado.</p>
+    {% endif %}
+  </div>
+
+  <div class="cartao">
+    <div class="section-head">
+      <div>
+        <h2>Afastamentos</h2>
+        <p class="subtitulo">Licenças e ausências registradas localmente.</p>
+      </div>
+    </div>
+
+    {% if afastamentos %}
+      <div class="list-stack">
+        {% for afastamento in afastamentos %}
+          <article class="timeline-item">
+            <div class="section-head">
+              <div>
+                <strong>{{ afastamento.tipo }}</strong>
+                <small>{{ fmt_data(afastamento.data_inicio) or 'Sem início' }}{% if afastamento.data_fim %} • {{ fmt_data(afastamento.data_fim) }}{% endif %}</small>
+              </div>
+              <form method="post" action="{{ url_for('funcionario_afastamento_excluir', enrollid=funcionario.enrollid, afastamento_id=afastamento.id) }}" onsubmit="return confirm('Excluir este afastamento?');">
+                <button class="botao botao-terciario" type="submit">Excluir</button>
+              </form>
+            </div>
+            <p>{{ afastamento.observacoes or 'Sem observações.' }}</p>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">Nenhum afastamento registrado.</p>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+  (function () {
+    const statusEl = document.getElementById('face-status');
+    const startBtn = document.getElementById('face-start');
+    const refreshBtn = document.getElementById('face-refresh');
+    const cancelBtn = document.getElementById('face-cancel');
+    if (!statusEl || !startBtn || !refreshBtn || !cancelBtn) return;
+
+    async function atualizarStatus() {
+      try {
+        const response = await fetch('{{ url_for("funcionarios_status_face") }}');
+        const data = await response.json();
+        if (data && data.ok) {
+          statusEl.textContent = data.mensagem || data.status || 'Status atualizado';
+        } else {
+          statusEl.textContent = data.mensagem || 'Não foi possível consultar o status';
+        }
+      } catch (error) {
+        statusEl.textContent = 'Falha ao consultar o status';
+      }
+    }
+
+    async function enviar(url, method = 'POST') {
+      const response = await fetch(url, { method });
+      return response.json();
+    }
+
+    startBtn.addEventListener('click', async () => {
+      startBtn.disabled = true;
+      try {
+        const data = await enviar('{{ url_for("funcionarios_iniciar_face", enrollid=funcionario.enrollid) }}');
+        statusEl.textContent = data.mensagem || (data.ok ? 'Cadastro iniciado' : 'Erro ao iniciar');
+      } catch (error) {
+        statusEl.textContent = 'Falha ao iniciar cadastro';
+      } finally {
+        startBtn.disabled = false;
+      }
+    });
+
+    refreshBtn.addEventListener('click', atualizarStatus);
+
+    cancelBtn.addEventListener('click', async () => {
+      cancelBtn.disabled = true;
+      try {
+        const data = await enviar('{{ url_for("funcionarios_cancelar_face") }}');
+        statusEl.textContent = data.ok ? 'Cadastro cancelado' : (data.mensagem || 'Não foi possível cancelar');
+      } catch (error) {
+        statusEl.textContent = 'Falha ao cancelar cadastro';
+      } finally {
+        cancelBtn.disabled = false;
+      }
+    });
+
+    atualizarStatus();
+    setInterval(atualizarStatus, 10000);
+  })();
+</script>
+{% endblock %}

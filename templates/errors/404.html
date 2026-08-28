@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Página não encontrada • {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="cartao cartao-central">
+  <div class="marca-relogio marca-relogio-grande" aria-hidden="true"></div>
+  <h1>Página não encontrada</h1>
+  <p class="subtitulo">A rota solicitada não existe ou foi removida. Vamos voltar para uma área conhecida.</p>
+  <div class="actions-row" style="justify-content:center;">
+    <a class="botao botao-principal" href="{{ url_for('index') }}">Voltar ao início</a>
+    <a class="botao botao-secundario" href="{{ url_for('dashboard') }}">Abrir dashboard</a>
+  </div>
+</section>
+{% endblock %}

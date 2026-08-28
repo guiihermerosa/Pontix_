@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pontix · GRB-Tecnologia — Ponto sem margem de erro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12151A;
+    --bg-2:#0D0F13;
+    --panel:#1B1F26;
+    --panel-2:#21262E;
+    --line:#2C323C;
+    --text:#EDEFF2;
+    --muted:#8D95A3;
+    --muted-2:#5E6572;
+    --accent:#E3A455;
+    --accent-dim:#8A6636;
+    --ok:#7FB88E;
+    --radius:14px;
+    --display:'Space Grotesk', sans-serif;
+    --body:'IBM Plex Sans', sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit; text-decoration:none;}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 32px;}
+  ::selection{background:var(--accent); color:#12151A;}
+
+  /* subtle grid texture used as background dial */
+  .dial-bg{
+    position:absolute; inset:0; pointer-events:none;
+    background-image:
+      radial-gradient(circle at 18% 20%, rgba(227,164,85,0.07), transparent 40%),
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: auto, 64px 64px, 64px 64px;
+    opacity:0.35;
+  }
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(18,21,26,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:1180px; margin:0 auto; padding:16px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-family:var(--display); font-weight:600; font-size:17px; letter-spacing:0.2px;}
+  .brand-mark{
+    width:34px; height:34px; border-radius:9px;
+    background:var(--panel-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--accent);
+  }
+  .brand small{color:var(--muted); font-weight:400; font-size:13px; margin-left:4px;}
+  nav.links{display:flex; align-items:center; gap:28px; font-size:14px;}
+  nav.links a{color:var(--muted); transition:color .2s;}
+  nav.links a:hover{color:var(--text);}
+  .nav-cta{
+    background:var(--accent); color:#1A1305 !important; padding:9px 18px;
+    border-radius:8px; font-weight:600; font-size:13.5px;
+  }
+  .nav-cta:hover{background:#EEB56D;}
+
+  /* ---------- HERO ---------- */
+  .hero{position:relative; overflow:hidden; padding:88px 0 96px; border-bottom:1px solid var(--line);}
+  .hero-grid{
+    display:grid; grid-template-columns:1.15fr 0.85fr; gap:56px; align-items:center;
+    position:relative; z-index:1;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:11.5px; letter-spacing:1.6px;
+    color:var(--accent); border:1px solid var(--accent-dim);
+    background:rgba(227,164,85,0.06);
+    padding:6px 12px; border-radius:100px; margin-bottom:24px;
+  }
+  .hero h1{
+    font-family:var(--display); font-weight:600;
+    font-size:clamp(34px, 4.4vw, 54px); line-height:1.08; letter-spacing:-0.5px;
+    margin-bottom:22px;
+  }
+  .hero h1 .rot{color:var(--accent); display:inline-block;}
+  .hero p.lead{color:var(--muted); font-size:17px; max-width:480px; margin-bottom:32px;}
+  .hero-actions{display:flex; align-items:center; gap:22px; margin-bottom:44px; flex-wrap:wrap;}
+  .btn-primary{
+    background:var(--accent); color:#1A1305; padding:14px 24px;
+    border-radius:9px; font-weight:600; font-size:14.5px;
+    display:inline-flex; align-items:center; gap:8px;
+    transition:transform .15s, background .15s;
+  }
+  .btn-primary:hover{background:#EEB56D; transform:translateY(-1px);}
+  .btn-text{color:var(--text); font-size:14.5px; font-weight:500; border-bottom:1px solid var(--line); padding-bottom:2px;}
+  .btn-text:hover{border-color:var(--accent); color:var(--accent);}
+  .proof{
+    display:flex; gap:0; font-family:var(--mono); font-size:12.5px; color:var(--muted);
+    border-top:1px solid var(--line); padding-top:20px; flex-wrap:wrap;
+  }
+  .proof span{padding-right:22px; margin-right:22px; border-right:1px solid var(--line);}
+  .proof span:last-child{border-right:none;}
+  .proof b{color:var(--text); font-weight:600;}
+
+  /* Flip clock */
+  .clock-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:18px;
+    padding:28px; position:relative;
+  }
+  .clock-top{display:flex; justify-content:space-between; align-items:center; font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-bottom:20px;}
+  .live-dot{display:flex; align-items:center; gap:6px; color:var(--ok);}
+  .live-dot i{width:6px; height:6px; border-radius:50%; background:var(--ok); display:inline-block; animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.35;}}
+
+  .flip-row{display:flex; justify-content:center; gap:6px; margin:8px 0 22px;}
+  .flip-sep{font-family:var(--mono); font-size:34px; color:var(--muted-2); align-self:center; padding-bottom:4px;}
+  .flip{
+    position:relative; width:52px; height:64px; perspective:200px;
+  }
+  .flip .digit{
+    position:absolute; inset:0; background:var(--panel-2);
+    border:1px solid var(--line); border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-weight:600; font-size:32px; color:var(--text);
+  }
+  .flip .digit::after{
+    content:''; position:absolute; left:0; right:0; top:50%; height:1px; background:var(--bg-2); opacity:.6;
+  }
+  .flip.flash .digit{animation:flipd .35s ease;}
+  @keyframes flipd{
+    0%{transform:rotateX(0deg); filter:brightness(1);}
+    45%{transform:rotateX(-90deg); filter:brightness(1.3);}
+    46%{transform:rotateX(90deg);}
+    100%{transform:rotateX(0deg); filter:brightness(1);}
+  }
+  .clock-date{text-align:center; font-family:var(--mono); font-size:12px; color:var(--muted); margin-bottom:22px;}
+
+  .punch-btn{
+    width:100%; background:transparent; border:1px solid var(--accent-dim); color:var(--accent);
+    padding:13px; border-radius:9px; font-family:var(--body); font-weight:600; font-size:14px;
+    display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;
+    transition:background .2s, color .2s;
+  }
+  .punch-btn:hover{background:rgba(227,164,85,0.08);}
+  .punch-btn.done{background:rgba(127,184,142,0.1); border-color:var(--ok); color:var(--ok); cursor:default;}
+  .clock-meta{display:flex; justify-content:space-between; margin-top:20px; font-family:var(--mono); font-size:11px; color:var(--muted-2); border-top:1px solid var(--line); padding-top:16px;}
+  .clock-meta b{display:block; color:var(--text); font-size:15px; font-family:var(--body); margin-top:2px;}
+
+  /* ---------- SECTION HEADING ---------- */
+  .section-heading{max-width:620px; margin-bottom:56px;}
+  .section-heading .tag{font-family:var(--mono); font-size:11.5px; letter-spacing:1.6px; color:var(--accent); display:block; margin-bottom:14px;}
+  .section-heading h2{font-family:var(--display); font-weight:600; font-size:clamp(26px,3vw,36px); line-height:1.18; margin-bottom:14px; letter-spacing:-0.3px;}
+  .section-heading p{color:var(--muted); font-size:15.5px; max-width:520px;}
+
+  /* ---------- PLATAFORMA (ledger dashboard) ---------- */
+  .platform{padding:100px 0; border-bottom:1px solid var(--line); position:relative;}
+  .dash{
+    display:grid; grid-template-columns:1fr 1fr; gap:1px;
+    background:var(--line); border:1px solid var(--line); border-radius:16px; overflow:hidden;
+  }
+  .metric-cell{background:var(--panel); padding:26px 28px;}
+  .metric-cell small{font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--muted); display:block; margin-bottom:10px;}
+  .metric-cell b{font-family:var(--display); font-size:34px; font-weight:600; display:block;}
+  .metric-cell em{font-style:normal; font-size:12.5px; color:var(--ok);}
+  .ledger{background:var(--panel); grid-column:span 2; padding:24px 28px;}
+  .ledger-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .ledger-head span{font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--muted);}
+  .ledger-list{list-style:none; font-family:var(--mono); font-size:13px;}
+  .ledger-list li{
+    display:grid; grid-template-columns:90px 1fr 90px 100px; gap:14px;
+    padding:10px 0; border-top:1px solid var(--line); color:var(--muted); align-items:center;
+  }
+  .ledger-list li:first-child{border-top:none;}
+  .ledger-list li .name{color:var(--text); font-family:var(--body); font-weight:500;}
+  .ledger-list li .ok{color:var(--ok);}
+  .ledger-list li .stamp{
+    justify-self:end; font-size:10.5px; letter-spacing:1px; color:var(--ok);
+    border:1px solid var(--ok); padding:2px 8px; border-radius:100px; opacity:.85;
+  }
+
+  /* ---------- SEGURANÇA (ticket stubs) ---------- */
+  .security{padding:100px 0; border-bottom:1px solid var(--line);}
+  .stub-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:18px;}
+  .stub{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:24px 20px; position:relative;
+  }
+  .stub::before{
+    content:''; position:absolute; left:0; right:0; top:66px; height:0;
+    border-top:1px dashed var(--line);
+  }
+  .stub-id{font-family:var(--mono); font-size:11px; color:var(--muted-2); display:block; margin-bottom:14px;}
+  .stub-icon{color:var(--accent); margin-bottom:12px;}
+  .stub h3{font-family:var(--display); font-weight:600; font-size:16.5px; margin-bottom:10px; padding-top:10px;}
+  .stub p{color:var(--muted); font-size:13.5px; line-height:1.55;}
+  .stub .status{
+    margin-top:16px; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--ok);
+  }
+
+  /* ---------- CTA / DEMO ---------- */
+  .cta-section{padding:110px 0;}
+  .cta-box{
+    background:var(--panel); border:1px solid var(--line); border-radius:20px;
+    padding:56px; display:grid; grid-template-columns:1.1fr 0.9fr; gap:48px; align-items:center;
+    position:relative; overflow:hidden;
+  }
+  .cta-box::after{
+    content:''; position:absolute; right:-60px; top:-60px; width:220px; height:220px;
+    background:radial-gradient(circle, rgba(227,164,85,0.14), transparent 70%);
+  }
+  .cta-box h2{font-family:var(--display); font-weight:600; font-size:30px; margin-bottom:14px; letter-spacing:-0.4px;}
+  .cta-box p{color:var(--muted); font-size:15px; max-width:420px; margin-bottom:26px;}
+  .form-card{background:var(--panel-2); border:1px solid var(--line); border-radius:14px; padding:26px;}
+  .form-card label{display:block; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--muted); margin-bottom:6px;}
+  .form-card input{
+    width:100%; background:var(--bg-2); border:1px solid var(--line); border-radius:8px;
+    padding:11px 12px; color:var(--text); font-family:var(--body); font-size:14px; margin-bottom:16px;
+  }
+  .form-card input:focus{outline:none; border-color:var(--accent);}
+  .form-card button{
+    width:100%; background:var(--accent); color:#1A1305; border:none; padding:13px;
+    border-radius:8px; font-weight:600; font-size:14.5px; cursor:pointer;
+  }
+  .form-card button:hover{background:#EEB56D;}
+  .form-note{font-family:var(--mono); font-size:10.5px; color:var(--muted-2); margin-top:12px; text-align:center;}
+
+  footer{border-top:1px solid var(--line); padding:36px 0; }
+  .foot-inner{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;}
+  .foot-inner .brand{font-size:15px;}
+  footer .foot-links{display:flex; gap:22px; font-size:13px; color:var(--muted);}
+  footer .foot-links a:hover{color:var(--text);}
+  footer .copy{font-family:var(--mono); font-size:11px; color:var(--muted-2); margin-top:18px;}
+
+  @media (max-width:860px){
+    .hero-grid{grid-template-columns:1fr;}
+    .dash{grid-template-columns:1fr;}
+    .ledger{grid-column:span 1;}
+    .stub-grid{grid-template-columns:repeat(2,1fr);}
+    .cta-box{grid-template-columns:1fr; padding:32px;}
+    .ledger-list li{grid-template-columns:70px 1fr 70px;}
+    .ledger-list li .stamp{display:none;}
+    nav.links{display:none;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a href="#inicio" class="brand">
+      <span class="brand-mark">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      </span>
+      Pontix <small>· GRB-Tecnologia</small>
+    </a>
+    <nav class="links">
+      <a href="#plataforma">Plataforma</a>
+      <a href="#seguranca">Segurança</a>
+      <a href="#demo" class="nav-cta">Solicitar demonstração</a>
+    </nav>
+  </div>
+</header>
+
+<section id="inicio" class="hero">
+  <div class="dial-bg"></div>
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg>
+        TEMPO PRECISO. DECISÕES SEGURAS.
+      </div>
+      <h1>Cada marcação vira <span class="rot" id="rot">conformidade.</span></h1>
+      <p class="lead">Ponto biométrico e gestão de jornada para empresas que não podem errar: do registro facial na portaria até o fechamento da folha, sem planilha e sem risco trabalhista.</p>
+      <div class="hero-actions">
+        <a href="#demo" class="btn-primary">
+          Solicitar demonstração
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 17L17 7M9 7h8v8"/></svg>
+        </a>
+        <a href="#plataforma" class="btn-text">Ver a plataforma</a>
+      </div>
+      <div class="proof">
+        <span><b>99,9%</b> disponibilidade</span>
+        <span><b>LGPD</b> por arquitetura</span>
+        <span><b>Portaria 671/MTE</b> compatível</span>
+      </div>
+    </div>
+
+    <div class="clock-card">
+      <div class="clock-top">
+        <span id="clock-date">QUI, 20 AGO</span>
+        <span class="live-dot"><i></i> AO VIVO</span>
+      </div>
+      <div class="flip-row" id="flip-row"></div>
+      <div class="clock-date">Cândido Mota · Leitor facial · Portaria principal</div>
+      <button class="punch-btn" id="punch-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 11a5.8 5.8 0 1 0-11.6 0c0 4.6-1.2 6.6-2.2 7.6h16c-1-1-2.2-3-2.2-7.6z"/><path d="M9 4.5A3 3 0 0 1 12 2a3 3 0 0 1 3 2.5"/></svg>
+        Simular registro de entrada
+      </button>
+      <div class="clock-meta">
+        <span>Jornada<br><b>08h00</b></span>
+        <span>Colaboradores ativos<br><b>238</b></span>
+        <span>Precisão<br><b>100%</b></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="plataforma" class="platform">
+  <div class="wrap">
+    <div class="section-heading">
+      <span class="tag">O LIVRO-PONTO, EM TEMPO REAL</span>
+      <h2>Toda marcação vira linha de um livro que ninguém adultera.</h2>
+      <p>Um painel vivo da jornada de cada colaborador — presença, atrasos e horas extras visíveis antes que virem passivo trabalhista.</p>
+    </div>
+
+    <div class="dash">
+      <div class="metric-cell">
+        <small>PRESENTES HOJE</small>
+        <b>238<span style="font-size:16px;color:var(--muted);"> / 248</span></b>
+        <em>96,0% de comparecimento</em>
+      </div>
+      <div class="metric-cell">
+        <small>HORAS REGISTRADAS</small>
+        <b>1.904h</b>
+        <em>+3,2% vs. semana anterior</em>
+      </div>
+      <div class="ledger">
+        <div class="ledger-head">
+          <span>ÚLTIMAS MARCAÇÕES</span>
+          <span id="ledger-clock">--:--:--</span>
+        </div>
+        <ul class="ledger-list" id="ledger-list"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="seguranca" class="security">
+  <div class="wrap">
+    <div class="section-heading">
+      <span class="tag">CADA REGISTRO, UM COMPROVANTE</span>
+      <h2>Conformidade que resiste a fiscalização e a contestação judicial.</h2>
+      <p>Como um recibo de ponto de cartão perfurado — só que biométrico, criptografado e impossível de forjar.</p>
+    </div>
+
+    <div class="stub-grid">
+      <article class="stub">
+        <span class="stub-id">TALÃO Nº 0451</span>
+        <div class="stub-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17.8 11a5.8 5.8 0 1 0-11.6 0c0 4.6-1.2 6.6-2.2 7.6h16c-1-1-2.2-3-2.2-7.6z"/><path d="M9 4.5A3 3 0 0 1 12 2a3 3 0 0 1 3 2.5"/></svg>
+        </div>
+        <h3>Reconhecimento facial com prova de vida</h3>
+        <p>Cada marcação exige um rosto real, ao vivo — sem foto, sem crachá emprestado, sem inconsistência.</p>
+        <span class="status">● VALIDADO</span>
+      </article>
+
+      <article class="stub">
+        <span class="stub-id">TALÃO Nº 0452</span>
+        <div class="stub-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
+        </div>
+        <h3>Cerca virtual por unidade</h3>
+        <p>Marcações só valem dentro do perímetro cadastrado — a mesma regra em uma portaria ou em cem filiais.</p>
+        <span class="status">● VALIDADO</span>
+      </article>
+
+      <article class="stub">
+        <span class="stub-id">TALÃO Nº 0453</span>
+        <div class="stub-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        </div>
+        <h3>Dados protegidos por design</h3>
+        <p>Biometria e dados pessoais tratados com os princípios da LGPD, com acesso segmentado por perfil.</p>
+        <span class="status">● VALIDADO</span>
+      </article>
+
+      <article class="stub">
+        <span class="stub-id">TALÃO Nº 0454</span>
+        <div class="stub-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M9 13l2 2 4-4"/></svg>
+        </div>
+        <h3>Trilha de auditoria íntegra</h3>
+        <p>Histórico completo e exportável, pronto para fiscalização do trabalho e perícia judicial.</p>
+        <span class="status">● VALIDADO</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="demo" class="cta-section">
+  <div class="wrap">
+    <div class="cta-box">
+      <div>
+        <h2>Veja o Pontix rodando com os dados da sua operação.</h2>
+        <p>Em 20 minutos mostramos o leitor facial em ação, o painel de jornada e como fica o fechamento do seu ponto no primeiro mês.</p>
+        <div class="proof" style="border:none; padding:0; gap:0;">
+          <span><b>Sem instalação complexa</b></span>
+          <span><b>Suporte em português</b></span>
+        </div>
+      </div>
+      <div class="form-card">
+        <label for="f-nome">NOME</label>
+        <input id="f-nome" type="text" placeholder="Seu nome">
+        <label for="f-empresa">EMPRESA</label>
+        <input id="f-empresa" type="text" placeholder="Nome da empresa">
+        <label for="f-contato">E-MAIL OU WHATSAPP</label>
+        <input id="f-contato" type="text" placeholder="Como podemos te chamar">
+        <button type="button" id="f-submit">Quero uma demonstração</button>
+        <div class="form-note">Resposta em até 1 dia útil · GRB-Tecnologia</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div>
+      <a href="#inicio" class="brand">
+        <span class="brand-mark">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </span>
+        Pontix <small>· GRB-Tecnologia</small>
+      </a>
+      <div class="copy">© 2026 GRB-Tecnologia. Todos os registros, um só livro.</div>
+    </div>
+    <div class="foot-links">
+      <a href="#plataforma">Plataforma</a>
+      <a href="#seguranca">Segurança</a>
+      <a href="#demo">Contato</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ---- outcomes rotator ----
+  const outcomes = ['conformidade.', 'produtividade.', 'confiança.'];
+  let oi = 0;
+  const rotEl = document.getElementById('rot');
+  setInterval(() => {
+    oi = (oi + 1) % outcomes.length;
+    rotEl.style.opacity = 0;
+    setTimeout(() => { rotEl.textContent = outcomes[oi]; rotEl.style.opacity = 1; }, 220);
+  }, 2600);
+  rotEl.style.transition = 'opacity .22s';
+
+  // ---- flip clock ----
+  const flipRow = document.getElementById('flip-row');
+  const dateEl = document.getElementById('clock-date');
+  const ledgerClock = document.getElementById('ledger-clock');
+  const positions = ['h1','h2',':','m1','m2',':','s1','s2'];
+  const cells = {};
+  positions.forEach((p, idx) => {
+    if (p === ':') {
+      const sep = document.createElement('div');
+      sep.className = 'flip-sep';
+      sep.textContent = ':';
+      flipRow.appendChild(sep);
+    } else {
+      const holder = document.createElement('div');
+      holder.className = 'flip';
+      const d = document.createElement('div');
+      d.className = 'digit';
+      d.textContent = '0';
+      holder.appendChild(d);
+      flipRow.appendChild(holder);
+      cells[p] = { holder, d, last: '0' };
+    }
+  });
+
+  function pad(n){ return n.toString().padStart(2,'0'); }
+  const weekdays = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+  const months = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+  function tick(){
+    const now = new Date();
+    const hh = pad(now.getHours()), mm = pad(now.getMinutes()), ss = pad(now.getSeconds());
+    const map = {h1:hh[0],h2:hh[1],m1:mm[0],m2:mm[1],s1:ss[0],s2:ss[1]};
+    Object.keys(map).forEach(k => {
+      const cell = cells[k];
+      if (cell.last !== map[k]) {
+        cell.d.textContent = map[k];
+        cell.holder.classList.remove('flash');
+        void cell.holder.offsetWidth;
+        cell.holder.classList.add('flash');
+        cell.last = map[k];
+      }
+    });
+    dateEl.textContent = `${weekdays[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+    ledgerClock.textContent = `${hh}:${mm}:${ss}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  // ---- punch button ----
+  const punchBtn = document.getElementById('punch-btn');
+  punchBtn.addEventListener('click', () => {
+    if (punchBtn.classList.contains('done')) return;
+    punchBtn.classList.add('done');
+    punchBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg> Ponto registrado';
+    setTimeout(() => document.getElementById('plataforma').scrollIntoView({behavior:'smooth'}), 500);
+  });
+
+  // ---- live ledger ----
+  const names = ['Ana Martins','Rafael Costa','João Silva','Luiza Melo','Beatriz Nunes','Carlos Eduardo','Priscila Rocha','Marcos Vinícius'];
+  const ledgerList = document.getElementById('ledger-list');
+  function pushEntry(){
+    const now = new Date();
+    const name = names[Math.floor(Math.random()*names.length)];
+    const type = Math.random() > 0.5 ? 'Entrada' : 'Saída';
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}</span>
+                    <span class="name">${name}</span>
+                    <span class="ok">${type}</span>
+                    <span class="stamp">CONFERIDO</span>`;
+    ledgerList.prepend(li);
+    while (ledgerList.children.length > 6) ledgerList.removeChild(ledgerList.lastChild);
+  }
+  for (let i=0;i<5;i++) pushEntry();
+  setInterval(pushEntry, 4200);
+
+  // ---- form (non-functional demo) ----
+  document.getElementById('f-submit').addEventListener('click', () => {
+    const btn = document.getElementById('f-submit');
+    btn.textContent = 'Solicitação enviada ✓';
+    btn.style.background = '#7FB88E';
+    setTimeout(() => { btn.textContent = 'Quero uma demonstração'; btn.style.background = ''; }, 2600);
+  });
+</script>
+</body>
+</html>

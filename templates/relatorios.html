@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% block title %}Relatorios â€¢ {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="cartao dashboard-capa">
+  <div class="dashboard-capa-texto page-title">
+    <span class="chip">{% if configurado %}Geracao disponivel{% else %}Configure o leitor primeiro{% endif %}</span>
+    <h1>Relatorios e espelho de ponto</h1>
+    <p class="subtitulo">
+      Gere espelho semanal, mensal, periodo atual, fechamento local e exportacoes personalizadas.
+      Os filtros abaixo sao aplicados antes da geracao do arquivo.
+    </p>
+  </div>
+
+  <div class="section-stack">
+    <div class="hero-spotlight">
+      <strong>Atalho rapido</strong>
+      <p>Use os botoes abaixo para iniciar a geracao do arquivo sem precisar voltar para outras telas.</p>
+    </div>
+    <div class="actions-row">
+      <a class="botao botao-principal" href="#gerar-relatorio">Gerar relatorio</a>
+      <a class="botao botao-secundario" href="#fechamento-local">Fechamento local</a>
+    </div>
+  </div>
+</section>
+
+<section class="cartao">
+  <div class="section-head">
+    <div>
+      <h2>Filtros de consulta</h2>
+      <p class="subtitulo">Refine o espelho antes de gerar XLSX, CSV ou PDF.</p>
+    </div>
+  </div>
+
+  <form method="get" action="{{ url_for('relatorios') }}" class="form-grid">
+    <label class="campo">
+      Matricula
+      <input type="text" name="matricula" value="{{ filtros.matricula }}" list="lista-matriculas" placeholder="Ex.: 12345">
+      <datalist id="lista-matriculas">
+        {% for matricula in opcoes_relatorio.matriculas or [] %}
+          <option value="{{ matricula }}">
+        {% endfor %}
+      </datalist>
+    </label>
+
+    <label class="campo">
+      Nome
+      <input type="text" name="nome" value="{{ filtros.nome }}" list="lista-nomes" placeholder="Pesquise pelo nome">
+      <datalist id="lista-nomes">
+        {% for funcionario in opcoes_relatorio.funcionarios or [] %}
+          <option value="{{ funcionario }}">
+        {% endfor %}
+      </datalist>
+    </label>
+
+    <label class="campo">
+      Departamento
+      <select name="departamento">
+        <option value="">Todos</option>
+        {% for departamento in opcoes_relatorio.departamentos or [] %}
+          <option value="{{ departamento }}" {% if filtros.departamento == departamento %}selected{% endif %}>{{ departamento }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="campo">
+      Turno
+      <select name="turno">
+        <option value="">Todos</option>
+        {% for turno in opcoes_relatorio.turnos or [] %}
+          <option value="{{ turno }}" {% if filtros.turno == turno %}selected{% endif %}>{{ turno }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="campo">
+      Periodo inicial
+      <input type="date" name="periodo_inicio" value="{{ filtros.periodo_inicio or hoje }}">
+    </label>
+
+    <label class="campo">
+      Periodo final
+      <input type="date" name="periodo_fim" value="{{ filtros.periodo_fim or hoje }}">
+    </label>
+
+    <div class="actions-row" style="align-items:end;">
+      <button class="botao botao-principal" type="submit">Aplicar filtros</button>
+      <a class="botao botao-terciario" href="{{ url_for('relatorios') }}">Limpar filtros</a>
+    </div>
+  </form>
+
+  {% if resumo_filtros %}
+    <div class="actions-row mt-4">
+      {% for item in resumo_filtros %}
+        <span class="chip">{{ item.label }}: {{ item.value }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+
+<section class="section-grid">
+  <div class="cartao" id="gerar-relatorio">
+    <div class="section-head">
+      <div>
+        <h2>Gerar espelho</h2>
+        <p class="subtitulo">Escolha o periodo que deseja consolidar em XLSX, CSV ou PDF.</p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <form method="post" action="{{ url_for('gerar') }}" class="mini-card stack-gap">
+        <input type="hidden" name="tipo" value="semana_atual">
+        <input type="hidden" name="matricula" value="{{ filtros.matricula }}">
+        <input type="hidden" name="nome" value="{{ filtros.nome }}">
+        <input type="hidden" name="departamento" value="{{ filtros.departamento }}">
+        <input type="hidden" name="turno" value="{{ filtros.turno }}">
+        <input type="hidden" name="periodo_inicio" value="{{ filtros.periodo_inicio }}">
+        <input type="hidden" name="periodo_fim" value="{{ filtros.periodo_fim }}">
+        <strong>Semana atual</strong>
+        <p class="subtitulo">Gera o espelho da semana em andamento.</p>
+        <button class="botao botao-principal" type="submit">Gerar</button>
+      </form>
+
+      <form method="post" action="{{ url_for('gerar') }}" class="mini-card stack-gap">
+        <input type="hidden" name="tipo" value="mes_atual">
+        <input type="hidden" name="matricula" value="{{ filtros.matricula }}">
+        <input type="hidden" name="nome" value="{{ filtros.nome }}">
+        <input type="hidden" name="departamento" value="{{ filtros.departamento }}">
+        <input type="hidden" name="turno" value="{{ filtros.turno }}">
+        <input type="hidden" name="periodo_inicio" value="{{ filtros.periodo_inicio }}">
+        <input type="hidden" name="periodo_fim" value="{{ filtros.periodo_fim }}">
+        <strong>Mes atual</strong>
+        <p class="subtitulo">Gera o resumo consolidado do mes corrente.</p>
+        <button class="botao botao-principal" type="submit">Gerar</button>
+      </form>
+
+      <form method="post" action="{{ url_for('gerar') }}" class="mini-card stack-gap">
+        <input type="hidden" name="tipo" value="semana">
+        <input type="hidden" name="matricula" value="{{ filtros.matricula }}">
+        <input type="hidden" name="nome" value="{{ filtros.nome }}">
+        <input type="hidden" name="departamento" value="{{ filtros.departamento }}">
+        <input type="hidden" name="turno" value="{{ filtros.turno }}">
+        <input type="hidden" name="periodo_inicio" value="{{ filtros.periodo_inicio }}">
+        <input type="hidden" name="periodo_fim" value="{{ filtros.periodo_fim }}">
+        <strong>Semana passada</strong>
+        <p class="subtitulo">Gera o fechamento da semana anterior.</p>
+        <button class="botao botao-secundario" type="submit">Gerar</button>
+      </form>
+
+      <form method="post" action="{{ url_for('gerar') }}" class="mini-card stack-gap">
+        <input type="hidden" name="tipo" value="mes">
+        <input type="hidden" name="matricula" value="{{ filtros.matricula }}">
+        <input type="hidden" name="nome" value="{{ filtros.nome }}">
+        <input type="hidden" name="departamento" value="{{ filtros.departamento }}">
+        <input type="hidden" name="turno" value="{{ filtros.turno }}">
+        <input type="hidden" name="periodo_inicio" value="{{ filtros.periodo_inicio }}">
+        <input type="hidden" name="periodo_fim" value="{{ filtros.periodo_fim }}">
+        <strong>Mes passado</strong>
+        <p class="subtitulo">Gera o fechamento mensal anterior.</p>
+        <button class="botao botao-secundario" type="submit">Gerar</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="cartao">
+    <div class="section-head">
+      <div>
+        <h2>Periodo personalizado</h2>
+        <p class="subtitulo">Use datas especificas para emitir um espelho sob medida.</p>
+      </div>
+    </div>
+
+    <form method="post" action="{{ url_for('gerar') }}" class="form-grid">
+      <input type="hidden" name="tipo" value="personalizado">
+      <input type="hidden" name="matricula" value="{{ filtros.matricula }}">
+      <input type="hidden" name="nome" value="{{ filtros.nome }}">
+      <input type="hidden" name="departamento" value="{{ filtros.departamento }}">
+      <input type="hidden" name="turno" value="{{ filtros.turno }}">
+      <label class="campo">
+        Data inicial
+        <input type="date" name="periodo_inicio" value="{{ filtros.periodo_inicio or hoje }}">
+      </label>
+      <label class="campo">
+        Data final
+        <input type="date" name="periodo_fim" value="{{ filtros.periodo_fim or hoje }}">
+      </label>
+      <div class="actions-row" style="align-items:end;">
+        <button class="botao botao-principal" type="submit">Gerar periodo</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="cartao" id="fechamento-local">
+    <div class="section-head">
+      <div>
+        <h2>Fechamento local</h2>
+        <p class="subtitulo">Opcoes para gerar o fechamento do mes em andamento ou do mes passado.</p>
+      </div>
+    </div>
+
+    <div class="actions-row">
+      <form method="post" action="{{ url_for('fechamento_local') }}">
+        <input type="hidden" name="tipo" value="mes_atual">
+        <button class="botao botao-principal" type="submit">Mes atual</button>
+      </form>
+      <form method="post" action="{{ url_for('fechamento_local') }}">
+        <input type="hidden" name="tipo" value="mes_passado">
+        <button class="botao botao-secundario" type="submit">Mes passado</button>
+      </form>
+      <form method="post" action="{{ url_for('validacao_inicial') }}">
+        <button class="botao botao-terciario" type="submit">Validacao inicial</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="cartao">
+  <div class="section-head">
+    <div>
+      <h2>Arquivos gerados</h2>
+      <p class="subtitulo">Relatorios salvos localmente e prontos para baixar.</p>
+    </div>
+    <a class="botao botao-secundario" href="{{ url_for('index') }}">Voltar ao resumo</a>
+  </div>
+
+  {% if relatorios %}
+    <div class="table-wrap">
+      <table class="tabela-relatorios">
+        <thead>
+          <tr>
+            <th>Arquivo</th>
+            <th>Formato</th>
+            <th>Gerado em</th>
+            <th>Tamanho</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in relatorios %}
+            <tr>
+              <td class="celula-arquivo">{{ item.nome }} <span class="tag-formato">{{ item.formato }}</span></td>
+              <td>{{ item.formato }}</td>
+              <td>{{ item.gerado_em }}</td>
+              <td>{{ item.tamanho_kb }} KB</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="vazio">Ainda nao ha relatorios gerados nesta pasta.</p>
+  {% endif %}
+</section>
+{% endblock %}

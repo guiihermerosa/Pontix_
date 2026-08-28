@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% block title %}Funcionarios â€¢ {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="cartao">
+  <div class="section-head">
+    <div class="page-title">
+      <span class="chip">Cadastro e manutencao</span>
+      <h1>Funcionarios</h1>
+      <p class="subtitulo">Cadastre colaboradores, ajuste dados extras e acesse rapidamente o perfil de cada pessoa.</p>
+    </div>
+    <span class="dashboard-live-badge">{% if proximo_id %}Proxima matricula {{ proximo_id }}{% else %}Sem sugestao{% endif %}</span>
+  </div>
+</section>
+
+<section class="section-grid">
+  <form method="post" action="{{ url_for('funcionarios_novo') }}" class="cartao stack-gap">
+    <div class="section-head">
+      <div>
+        <h2>Novo funcionario</h2>
+        <p class="subtitulo">Use a matricula sugerida ou busque outro numero disponivel no leitor.</p>
+      </div>
+      <button class="botao botao-secundario" type="button" id="btn-sugerir-id">Sugerir matricula</button>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo">
+        Matricula
+        <input type="number" id="novo-enrollid" name="enrollid" value="{{ proximo_id or '' }}" required>
+      </label>
+      <label class="campo">
+        Nome
+        <input type="text" name="name" placeholder="Nome completo" required>
+      </label>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo">
+        Departamento
+        <input type="text" name="department" placeholder="Setor / filial">
+      </label>
+      <label class="campo">
+        Turno
+        <select name="shiftid">
+          <option value="0">Sem turno</option>
+          {% for turno in turnos %}
+            <option value="{{ turno.id if turno.id is defined else loop.index0 }}">{{ turno.name or turno.display_name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo">
+        CPF
+        <input type="text" name="cpf" placeholder="00000000000">
+      </label>
+      <label class="campo">
+        PIS
+        <input type="text" name="pis">
+      </label>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo">
+        CTPS
+        <input type="text" name="ctps">
+      </label>
+      <label class="campo">
+        Data de admissao
+        <input type="date" name="data_admissao">
+      </label>
+    </div>
+
+    <div class="actions-row">
+      <button class="botao botao-principal" type="submit">Salvar funcionario</button>
+      <a class="botao botao-secundario" href="{{ url_for('turnos') }}">Ajustar turnos</a>
+    </div>
+  </form>
+
+  <div class="cartao stack-gap">
+    <div class="section-head">
+      <div>
+        <h2>Resumo operacional</h2>
+        <p class="subtitulo">Dados complementares ja armazenados localmente por funcionario.</p>
+      </div>
+    </div>
+
+    <form method="get" action="{{ url_for('funcionarios') }}" class="form-grid">
+      <label class="campo">
+        Busca
+        <input type="text" name="q" value="{{ filtro_funcionarios.q }}" placeholder="Matricula, nome ou departamento">
+      </label>
+      <label class="campo">
+        Departamento
+        <input type="text" name="departamento" value="{{ filtro_funcionarios.departamento }}" placeholder="Filtre por departamento">
+      </label>
+      <div class="actions-row" style="align-items:end;">
+        <button class="botao botao-principal" type="submit">Aplicar filtros</button>
+        <a class="botao botao-terciario" href="{{ url_for('funcionarios') }}">Limpar filtros</a>
+      </div>
+    </form>
+
+    <div class="hero-grid">
+      <div class="mini-card">
+        <span class="chip">Total na pagina</span>
+        <strong>{{ funcionarios|length }}</strong>
+      </div>
+      <div class="mini-card">
+        <span class="chip">Com CPF</span>
+        <strong>{{ funcionarios|selectattr('cpf')|list|length }}</strong>
+      </div>
+      <div class="mini-card">
+        <span class="chip">Atestados</span>
+        <strong>{{ funcionarios|sum(attribute='qtd_atestados') }}</strong>
+      </div>
+      <div class="mini-card">
+        <span class="chip">Afastamentos</span>
+        <strong>{{ funcionarios|sum(attribute='qtd_afastamentos') }}</strong>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cartao">
+  <div class="section-head">
+    <div>
+      <h2>Colaboradores cadastrados</h2>
+      <p class="subtitulo">Abra o perfil para editar dados, anexar documentos e gerenciar a face.</p>
+    </div>
+  </div>
+
+  {% if funcionarios %}
+    <div class="list-stack">
+      {% for funcionario in funcionarios %}
+        <article class="profile-item">
+          <div class="profile-meta">
+            <span class="action-pill">{{ funcionario.department or 'Sem departamento' }}</span>
+            <strong>{{ funcionario.name or ('Funcionario ' ~ funcionario.enrollid) }}</strong>
+            <p>Matricula {{ funcionario.enrollid }} â€¢ {{ funcionario.shift_name or 'Sem turno' }}</p>
+            <small>CPF {{ funcionario.cpf or 'nao informado' }} â€¢ PIS {{ funcionario.pis or 'nao informado' }} â€¢ CTPS {{ funcionario.ctps or 'nao informado' }}</small>
+            <small>Admissao {{ fmt_data(funcionario.data_admissao) or 'nao informada' }}</small>
+          </div>
+          <div class="stack-gap" style="align-items:flex-end;">
+            <span class="dashboard-live-badge">{{ funcionario.qtd_atestados }} atestado(s) â€¢ {{ funcionario.qtd_afastamentos }} afastamento(s)</span>
+            <div class="actions-row" style="justify-content:flex-end;">
+              <a class="botao botao-secundario" href="{{ url_for('funcionario_perfil', enrollid=funcionario.enrollid) }}">Abrir perfil</a>
+              <form method="post" action="{{ url_for('funcionarios_remover_face', enrollid=funcionario.enrollid) }}" onsubmit="return confirm('Remover a face deste funcionario?');">
+                <button class="botao botao-terciario" type="submit">Remover face</button>
+              </form>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+    <div class="actions-row" style="justify-content:space-between; margin-top: 1rem;">
+      <div class="chip">Pagina {{ paginacao.page }} de {{ paginacao.pages }} - {{ paginacao.total }} registro(s)</div>
+      <div class="actions-row">
+        {% if paginacao.has_prev %}
+          <a class="botao botao-terciario" href="{{ url_for('funcionarios', q=filtro_funcionarios.q, departamento=filtro_funcionarios.departamento, page=paginacao.prev_page, per_page=paginacao.per_page) }}">Anterior</a>
+        {% endif %}
+        {% if paginacao.has_next %}
+          <a class="botao botao-secundario" href="{{ url_for('funcionarios', q=filtro_funcionarios.q, departamento=filtro_funcionarios.departamento, page=paginacao.next_page, per_page=paginacao.per_page) }}">Proxima</a>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p class="empty-state">Nenhum funcionario cadastrado para exibir.</p>
+  {% endif %}
+</section>
+
+<script>
+  (function () {
+    const btn = document.getElementById('btn-sugerir-id');
+    const input = document.getElementById('novo-enrollid');
+    if (!btn || !input) return;
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = 'Buscando...';
+      try {
+        const response = await fetch('{{ url_for("funcionarios_proximo_id") }}');
+        const data = await response.json();
+        if (data && data.ok && data.enrollid) {
+          input.value = data.enrollid;
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    });
+  })();
+</script>
+{% endblock %}

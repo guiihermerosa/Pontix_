@@ -2,6 +2,7 @@
 
 
 import csv
+import logging
 import os
 import threading
 import time
@@ -27,9 +28,37 @@ LOGOS_DIR = os.path.join(BASE_DIR, "logos")
 if not os.path.isdir(LOGOS_DIR):
     os.makedirs(LOGOS_DIR)
 
-app = Flask(__name__)
-app.secret_key = "ponto-web-local-nao-precisa-ser-secreto"
+app = Flask(__name__, template_folder="templates", static_folder="static")
+app.config.update(
+    SECRET_KEY="ponto-web-local-nao-precisa-ser-secreto",
+    TEMPLATES_AUTO_RELOAD=True,
+    JSON_SORT_KEYS=False,
+)
+app.logger.setLevel(logging.INFO)
 notificacoes.iniciar_em_segundo_plano()
+
+
+@app.route("/logos/<path:nome_arquivo>")
+def logo_arquivo(nome_arquivo):
+    return send_from_directory(LOGOS_DIR, nome_arquivo)
+
+
+@app.context_processor
+def inject_globals():
+    return {
+        "app_name": "Gerenciador de Ponto",
+        "configuracao": config_atual(),
+        "hoje_iso": date.today().isoformat(),
+        "hoje_br": date.today().strftime("%d/%m/%Y"),
+        "fmt_data": _data_iso_para_display,
+        "fmt_hora": _hora_para_display,
+        "fmt_data_hora": _data_hora_para_display,
+    }
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("errors/404.html", error=error), 404
 
 # progresso da ultima geracao (pra barra de progresso simples via polling)
 _progresso = {"em_andamento": False, "feito": 0, "total": 0, "erro": None, "arquivo": None}
@@ -49,6 +78,7 @@ def _enriquecer_funcionarios_com_extras(funcionarios):
     for item in funcionarios or []:
         extras = cadastro_local.obter_resumo(item.get("enrollid"))
         copia = dict(item)
+        copia["department"] = _departamento_efetivo(item.get("enrollid"), item.get("department", ""), extras)
         copia["cpf"] = extras.get("cpf", "")
         copia["pis"] = extras.get("pis", "")
         copia["ctps"] = extras.get("ctps", "")
@@ -57,6 +87,24 @@ def _enriquecer_funcionarios_com_extras(funcionarios):
         copia["qtd_afastamentos"] = extras.get("qtd_afastamentos", 0)
         enriquecidos.append(copia)
     return enriquecidos
+
+
+def _departamento_local(enrollid):
+    try:
+        return str(cadastro_local.obter_resumo(enrollid).get("department", "") or "").strip()
+    except Exception:
+        return ""
+
+
+def _departamento_efetivo(enrollid, departamento="", extras=None):
+    departamento = str(departamento or "").strip()
+    if departamento:
+        return departamento
+    if extras is not None:
+        departamento = str(extras.get("department", "") or "").strip()
+        if departamento:
+            return departamento
+    return _departamento_local(enrollid)
 
 
 def _int_form(valor, padrao=0):
@@ -80,6 +128,40 @@ def _data_iso_para_display(valor):
         return datetime.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
     except ValueError:
         return valor
+
+
+def _hora_para_display(valor):
+    texto = str(valor or "").strip()
+    if not texto:
+        return ""
+    for formato in ("%H:%M:%S", "%H:%M"):
+        try:
+            return datetime.strptime(texto, formato).strftime("%H:%M")
+        except ValueError:
+            pass
+    if len(texto) >= 5:
+        return texto[:5]
+    return texto
+
+
+def _data_hora_para_display(valor):
+    texto = str(valor or "").strip()
+    if not texto:
+        return ""
+    candidatos = [
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+    ]
+    for formato in candidatos:
+        try:
+            return datetime.strptime(texto, formato).strftime("%d/%m/%Y %H:%M")
+        except ValueError:
+            continue
+    if "T" in texto:
+        data_txt, hora_txt = texto.split("T", 1)
+        return "{} {}".format(_data_iso_para_display(data_txt), _hora_para_display(hora_txt))
+    return _data_iso_para_display(texto)
 
 
 def _data_form(valor):
@@ -216,7 +298,7 @@ def _url_absoluta_leitor(config, caminho):
 def _normalizar_marcacao_dashboard(item, config):
     nome = str(item.get("name", "") or "").strip()
     matricula = str(item.get("enrollid", "") or "").strip()
-    departamento = str(item.get("department", "") or "").strip()
+    departamento = _departamento_efetivo(item.get("enrollid", ""), item.get("department", ""))
     hora = str(item.get("hora", "") or "").strip()
     if not hora and item.get("time"):
         hora = str(item.get("time", "")).strip()
@@ -337,7 +419,9 @@ def _parse_data_filtro(valor, padrao):
 
 
 def _texto_filtro(valor):
-    return (valor or "").strip().lower()
+    if valor is None:
+        return ""
+    return str(valor).strip().lower()
 
 
 def _carregar_registros_operacionais(config, inicio, fim, consulta="", departamento="", turno=""):
@@ -350,7 +434,7 @@ def _carregar_registros_operacionais(config, inicio, fim, consulta="", departame
     for item in registros:
         nome = _texto_filtro(item.get("name", ""))
         matricula = _texto_filtro(item.get("enrollid", ""))
-        depto = _texto_filtro(item.get("department", ""))
+        depto = _texto_filtro(_departamento_efetivo(item.get("enrollid", ""), item.get("department", "")))
         shift = _texto_filtro(item.get("shift_name", ""))
         if consulta and consulta not in nome and consulta not in matricula and consulta not in depto:
             continue
@@ -363,17 +447,18 @@ def _carregar_registros_operacionais(config, inicio, fim, consulta="", departame
     agrupados = OrderedDict()
     for item in sorted(filtrados, key=lambda row: (str(row.get("data", "")), str(row.get("hora", "")), str(row.get("enrollid", "")))):
         chave = str(item.get("enrollid", "") or "").strip() or str(item.get("signature", "") or "")
+        departamento_item = _departamento_efetivo(item.get("enrollid", ""), item.get("department", ""))
         grupo = agrupados.setdefault(chave, {
             "enrollid": str(item.get("enrollid", "") or "").strip(),
             "name": item.get("name", "") or "",
-            "department": item.get("department", "") or "",
+            "department": departamento_item,
             "shift_name": item.get("shift_name", "") or "",
             "timeline": [],
         })
         if not grupo["name"]:
             grupo["name"] = item.get("name", "") or ""
         if not grupo["department"]:
-            grupo["department"] = item.get("department", "") or ""
+            grupo["department"] = departamento_item
         if not grupo["shift_name"]:
             grupo["shift_name"] = item.get("shift_name", "") or ""
         grupo["timeline"].append(item)
@@ -428,7 +513,374 @@ def _carregar_registros_operacionais(config, inicio, fim, consulta="", departame
     }
 
 
-def _iniciar_geracao_relatorio(inicio, fim, nome_periodo, permitir_vazio=False, nota_vazio=None):
+def _minutos_entre_horas(inicio_hora, fim_hora):
+    try:
+        ini = datetime.strptime(str(inicio_hora), "%H:%M:%S")
+    except Exception:
+        try:
+            ini = datetime.strptime(str(inicio_hora), "%H:%M")
+        except Exception:
+            return ""
+    try:
+        fim = datetime.strptime(str(fim_hora), "%H:%M:%S")
+    except Exception:
+        try:
+            fim = datetime.strptime(str(fim_hora), "%H:%M")
+        except Exception:
+            return ""
+    delta = fim - ini
+    if delta.total_seconds() < 0:
+        delta += timedelta(days=1)
+    minutos = int(delta.total_seconds() // 60)
+    horas = minutos // 60
+    mins = minutos % 60
+    return "{:02d}:{:02d}".format(horas, mins)
+
+
+def _espelho_por_funcionario(grupo, config):
+    itens = list(grupo.get("timeline", []) or [])
+    dias = OrderedDict()
+    for item in sorted(itens, key=lambda row: (str(row.get("data", "")), str(row.get("hora", "")), str(row.get("signature", "")))):
+        chave = str(item.get("data", "") or "").strip() or date.today().isoformat()
+        dias.setdefault(chave, []).append(item)
+
+    cpf = ""
+    admissao = ""
+    try:
+        extras = cadastro_local.obter_resumo(grupo.get("enrollid", ""))
+        cpf = extras.get("cpf", "")
+        admissao = extras.get("data_admissao", "")
+    except Exception:
+        pass
+
+    linhas = []
+    for data_iso, registros in dias.items():
+        horarios = [fmt_hora(r.get("hora", "")) for r in registros if r.get("hora")]
+        horarios = [item for item in horarios if item]
+        marcas = " ".join(horarios) if horarios else "--"
+        jornada = marcas
+        duracao = ""
+        if len(horarios) >= 2:
+            duracao = _minutos_entre_horas(horarios[0], horarios[-1])
+        if not duracao:
+            duracao = "--:--"
+        tratamento = "I" if len(horarios) == 1 else "D/P" if len(horarios) > 4 else "OK"
+        linhas.append([
+            fmt_data(data_iso) or data_iso,
+            marcas,
+            jornada,
+            duracao,
+            grupo.get("shift_name", "") or "--",
+            tratamento,
+        ])
+
+    return {
+        "enrollid": grupo.get("enrollid", ""),
+        "name": grupo.get("name", ""),
+        "department": _departamento_efetivo(grupo.get("enrollid", ""), grupo.get("department", "")),
+        "shift_name": grupo.get("shift_name", ""),
+        "cpf": cpf,
+        "admissao": admissao,
+        "linhas": linhas,
+    }
+
+
+def _identificacao_relatorio(config):
+    return {
+        "empresa": config.get("company_name", "") or "Empresa",
+        "documento": config.get("company_document", "") or "",
+        "local": config.get("workplace_address", "") or "",
+        "rep": config.get("rep_identifier", "") or "",
+        "vendor": config.get("vendor_name", "") or "GRB Tecnologia",
+    }
+
+
+def _linhas_espelho_exportacao(espelhos):
+    cabecalhos = [
+        "Funcionario",
+        "Matricula",
+        "CPF",
+        "Admissao",
+        "Departamento",
+        "Turno",
+        "Data",
+        "Marcacoes",
+        "Jornada Prevista",
+        "Total Dia",
+        "Ocorrencia",
+    ]
+    linhas = []
+    for espelho in espelhos:
+        base = [
+            espelho.get("name", ""),
+            espelho.get("enrollid", ""),
+            espelho.get("cpf", ""),
+            _data_iso_para_display(espelho.get("admissao", "")),
+            espelho.get("department", ""),
+            espelho.get("shift_name", ""),
+        ]
+        registros = espelho.get("linhas", []) or []
+        if not registros:
+            linhas.append(base + ["Sem registros", "", "", "", ""])
+            continue
+        for registro in registros:
+            data_txt, marcas, jornada, total_dia, _turno, ocorrencia = (list(registro) + [""] * 6)[:6]
+            linhas.append(base + [data_txt, marcas, jornada, total_dia, ocorrencia])
+            base = ["", "", "", "", "", ""]
+    return cabecalhos, linhas
+
+
+def _estilo_cabecalho_planilha(ws, titulo, subtitulo, metadados, n_colunas):
+    from openpyxl.styles import Font, Alignment, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    ws.sheet_properties.tabColor = "1F4E78"
+    ws.append([titulo])
+    ws.append([subtitulo])
+    ws.append([metadados])
+    ws.append([])
+    ws.append([])
+    header_row = ws.max_row
+    for row_idx in (1, 2, 3):
+        ws.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=n_colunas)
+    ws["A1"].font = Font(size=14, bold=True, color="1F4E78")
+    ws["A2"].font = Font(size=11, italic=True, color="4A5568")
+    ws["A3"].font = Font(size=9, bold=True, color="718096")
+    ws["A1"].alignment = Alignment(horizontal="left")
+    ws["A2"].alignment = Alignment(horizontal="left")
+    ws["A3"].alignment = Alignment(horizontal="left")
+    for cel in ws[header_row]:
+        cel.font = Font(bold=True, color="1F2937")
+        cel.fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+        cel.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    ws.freeze_panes = ws["A{}".format(header_row + 1)]
+    ws.sheet_view.showGridLines = False
+    return header_row
+
+
+def _aplicar_faixa_linha(ws, row_number, n_colunas, destaque=False, alternada=False):
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    fill = "DCEBFA" if destaque else ("F7FAFC" if alternada else "EEF3F8")
+    if destaque:
+        fill = "1F4E78"
+    for col_idx in range(1, n_colunas + 1):
+        cel = ws.cell(row=row_number, column=col_idx)
+        cel.fill = PatternFill(start_color=fill, end_color=fill, fill_type="solid")
+        cel.alignment = Alignment(horizontal="center" if col_idx > 6 else "left", vertical="center", wrap_text=True)
+        if destaque:
+            cel.font = Font(bold=True, color="FFFFFF")
+        elif col_idx == 1 or col_idx == 2:
+            cel.font = Font(bold=True, color="1F2937")
+
+
+def _salvar_espelho_conferencia_xlsx(caminho, config, inicio, fim, espelhos, resumo_grupos):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    ident = _identificacao_relatorio(config)
+    periodo_txt = "{} a {}".format(_data_iso_para_display(inicio.isoformat()), _data_iso_para_display(fim.isoformat()))
+    emissao_txt = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    wb = Workbook()
+
+    ws = wb.active
+    ws.title = "Resumo"
+    ws.append(["Espelho de Ponto Eletronico"])
+    ws.append(["Empresa: {}{}".format(ident["empresa"], " | CNPJ/CPF: {}".format(ident["documento"]) if ident["documento"] else "")])
+    ws.append(["Local: {}{}".format(ident["local"], " | REP: {}".format(ident["rep"]) if ident["rep"] else "")])
+    ws.append(["Periodo: {} | Emissao: {}".format(periodo_txt, emissao_txt)])
+    ws.append([])
+    resumo_cols = [
+        "Matricula",
+        "Nome",
+        "Departamento",
+        "Turno",
+        "CPF",
+        "Admissao",
+        "Registros",
+        "Pendencia",
+    ]
+    ws.append(resumo_cols)
+    header_row = ws.max_row
+    for row_idx in (1, 2, 3, 4):
+        ws.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=len(resumo_cols))
+    ws["A1"].font = Font(size=15, bold=True, color="1F4E78")
+    ws["A2"].font = Font(size=10, italic=True, color="4A5568")
+    ws["A3"].font = Font(size=10, italic=True, color="4A5568")
+    ws["A4"].font = Font(size=9, bold=True, color="718096")
+    ws["A1"].alignment = Alignment(horizontal="left")
+    ws["A2"].alignment = Alignment(horizontal="left")
+    ws["A3"].alignment = Alignment(horizontal="left")
+    ws["A4"].alignment = Alignment(horizontal="left")
+    for cel in ws[header_row]:
+        cel.font = Font(bold=True, color="1F2937")
+        cel.fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+        cel.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    for idx, grupo in enumerate(resumo_grupos, start=1):
+        ws.append([
+            grupo.get("enrollid", ""),
+            grupo.get("name", ""),
+            grupo.get("department", ""),
+            grupo.get("shift_name", ""),
+            grupo.get("cpf", ""),
+            _data_iso_para_display(grupo.get("admissao", "")),
+            grupo.get("total", 0),
+            "Sim" if grupo.get("pendente") else "Nao",
+        ])
+        row = ws.max_row
+        _aplicar_faixa_linha(ws, row, len(resumo_cols), alternada=(idx % 2 == 0))
+    ws.freeze_panes = ws["A{}".format(header_row + 1)]
+    ws.auto_filter.ref = "A{}:{}{}".format(header_row, get_column_letter(len(resumo_cols)), ws.max_row)
+    for i, largura in enumerate([12, 24, 20, 16, 18, 14, 12, 12], start=1):
+        ws.column_dimensions[get_column_letter(i)].width = largura
+
+    ws2 = wb.create_sheet("Espelho")
+    espelho_cols = [
+        "Funcionario",
+        "Matricula",
+        "CPF",
+        "Admissao",
+        "Departamento",
+        "Turno",
+        "Data",
+        "Marcacoes",
+        "Jornada Prevista",
+        "Total Dia",
+        "Ocorrencia",
+    ]
+    linha_atual = 1
+    ws2.sheet_view.showGridLines = False
+    ws2.sheet_properties.tabColor = "0052A3"
+    for indice, espelho in enumerate(espelhos, start=1):
+        titulo = "{} - Matr. {}".format(espelho.get("name", "") or "Funcionario", espelho.get("enrollid", "") or "-")
+        subtitulo = "{} | {} | {}".format(
+            espelho.get("department", "") or "Sem departamento",
+            espelho.get("shift_name", "") or "Sem turno",
+            _data_iso_para_display(espelho.get("admissao", "")) or "Sem admissao",
+        )
+        ws2.append([titulo] + [""] * (len(espelho_cols) - 1))
+        ws2.merge_cells(start_row=linha_atual, start_column=1, end_row=linha_atual, end_column=len(espelho_cols))
+        cel = ws2.cell(row=linha_atual, column=1)
+        cel.font = Font(bold=True, size=11, color="FFFFFF")
+        cel.fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+        cel.alignment = Alignment(horizontal="left", vertical="center")
+        linha_atual += 1
+        ws2.append([subtitulo] + [""] * (len(espelho_cols) - 1))
+        ws2.merge_cells(start_row=linha_atual, start_column=1, end_row=linha_atual, end_column=len(espelho_cols))
+        cel = ws2.cell(row=linha_atual, column=1)
+        cel.font = Font(italic=True, size=9, color="1F2937")
+        cel.fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+        cel.alignment = Alignment(horizontal="left", vertical="center")
+        linha_atual += 1
+        ws2.append(espelho_cols)
+        header_row_espelho = linha_atual
+        for cel in ws2[header_row_espelho]:
+            cel.font = Font(bold=True, color="1F2937")
+            cel.fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+            cel.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        linha_atual += 1
+        linhas = espelho.get("linhas", []) or []
+        if not linhas:
+            ws2.append([
+                espelho.get("name", ""),
+                espelho.get("enrollid", ""),
+                espelho.get("cpf", ""),
+                _data_iso_para_display(espelho.get("admissao", "")),
+                espelho.get("department", ""),
+                espelho.get("shift_name", ""),
+                "Sem registros",
+                "",
+                "",
+                "",
+                "",
+            ])
+            _aplicar_faixa_linha(ws2, linha_atual, len(espelho_cols), alternada=False)
+            linha_atual += 1
+        else:
+            for idx, registro in enumerate(linhas, start=1):
+                data_txt, marcas, jornada, total_dia, _turno, ocorrencia = (list(registro) + [""] * 6)[:6]
+                ws2.append([
+                    espelho.get("name", "") if idx == 1 else "",
+                    espelho.get("enrollid", "") if idx == 1 else "",
+                    espelho.get("cpf", "") if idx == 1 else "",
+                    _data_iso_para_display(espelho.get("admissao", "")) if idx == 1 else "",
+                    espelho.get("department", "") if idx == 1 else "",
+                    espelho.get("shift_name", "") if idx == 1 else "",
+                    data_txt,
+                    marcas,
+                    jornada,
+                    total_dia,
+                    ocorrencia,
+                ])
+                _aplicar_faixa_linha(ws2, linha_atual, len(espelho_cols), alternada=(idx % 2 == 0))
+                linha_atual += 1
+        linha_atual += 1
+    for i, largura in enumerate([22, 12, 16, 14, 20, 16, 14, 26, 18, 12, 14], start=1):
+        ws2.column_dimensions[get_column_letter(i)].width = largura
+    ws2.freeze_panes = "A6"
+
+    wb.save(caminho)
+
+
+def _salvar_espelho_conferencia_pdf(caminho, config, inicio, fim, espelhos):
+    ident = _identificacao_relatorio(config)
+    periodo_txt = "{} a {}".format(_data_iso_para_display(inicio.isoformat()), _data_iso_para_display(fim.isoformat()))
+    subtitulo = "Empresa: {} | Periodo: {}".format(ident["empresa"], periodo_txt)
+    if ident["documento"]:
+        subtitulo += " | Documento: {}".format(ident["documento"])
+    if ident["rep"]:
+        subtitulo += " | REP: {}".format(ident["rep"])
+    if ident["local"]:
+        subtitulo += " | Local: {}".format(ident["local"])
+
+    cabecalhos = [
+        "Funcionario",
+        "Matricula",
+        "CPF",
+        "Admissao",
+        "Departamento",
+        "Turno",
+        "Data",
+        "Marcacoes",
+        "Jornada Prevista",
+        "Total Dia",
+        "Ocorrencia",
+    ]
+    linhas = []
+    for espelho in espelhos:
+        linhas.append([
+            espelho.get("name", ""),
+            espelho.get("enrollid", ""),
+            espelho.get("cpf", ""),
+            _data_iso_para_display(espelho.get("admissao", "")),
+            espelho.get("department", ""),
+            espelho.get("shift_name", ""),
+            "",
+            "",
+            "",
+            "",
+            "",
+        ])
+        linhas_espelho = espelho.get("linhas", []) or []
+        if not linhas_espelho:
+            linhas.append(["", "", "", "", "", "", "Sem registros", "", "", "", ""])
+            continue
+        for registro in linhas_espelho:
+            data_txt, marcas, jornada, total_dia, _turno, ocorrencia = (list(registro) + [""] * 6)[:6]
+            linhas.append(["", "", "", "", "", "", data_txt, marcas, jornada, total_dia, ocorrencia])
+
+    ponto_core._gerar_pdf_texto(
+        caminho,
+        "Espelho de Ponto Eletronico",
+        subtitulo,
+        cabecalhos,
+        linhas,
+    )
+
+
+def _iniciar_geracao_relatorio(inicio, fim, nome_periodo, permitir_vazio=False, nota_vazio=None, filtros=None):
     config = config_atual()
     if not config_store.esta_configurado(config):
         flash("Configure o IP e a senha do leitor antes de gerar um relatorio.", "erro")
@@ -454,7 +906,7 @@ def _iniciar_geracao_relatorio(inicio, fim, nome_periodo, permitir_vazio=False, 
         try:
             caminho, nome_arquivo, qtd = ponto_core.gerar_relatorio_completo(
                 cfg, inicio, fim, nome_periodo, progress_cb=progresso_cb,
-                permitir_vazio=permitir_vazio, nota_vazio=nota_vazio
+                permitir_vazio=permitir_vazio, nota_vazio=nota_vazio, filtros=filtros
             )
             with _lock:
                 _progresso.update(em_andamento=False, arquivo=nome_arquivo, erro=None)
@@ -470,9 +922,7 @@ def _iniciar_geracao_relatorio(inicio, fim, nome_periodo, permitir_vazio=False, 
     return redirect(url_for("gerando"))
 
 
-@app.route("/")
-def index():
-    config = config_atual()
+def _listar_relatorios_gerados(config):
     output_dir = os.path.join(BASE_DIR, config["output_dir"])
     relatorios = []
     if os.path.isdir(output_dir):
@@ -487,6 +937,13 @@ def index():
                         "%d/%m/%Y %H:%M", time.localtime(os.path.getmtime(caminho))
                     ),
                 })
+    return relatorios
+
+
+@app.route("/")
+def index():
+    config = config_atual()
+    relatorios = _listar_relatorios_gerados(config)
     historico_local = ponto_core.ler_historico_local(config, limite=20)
     historico_csv = ponto_core.caminho_historico_csv(config["output_dir"])
     hoje = date.today()
@@ -519,6 +976,22 @@ def index():
         historico_csv_disponivel=os.path.isfile(historico_csv),
         dashboard=dashboard,
         hoje=hoje.isoformat(),
+    )
+
+
+@app.route("/relatorios")
+def relatorios():
+    config = config_atual()
+    filtros = _filtros_relatorio_request(request.args)
+    return render_template(
+        "relatorios.html",
+        config=config,
+        configurado=config_store.esta_configurado(config),
+        relatorios=_listar_relatorios_gerados(config),
+        filtros=filtros,
+        resumo_filtros=_resumo_filtros(filtros),
+        opcoes_relatorio=_opcoes_relatorio(config),
+        hoje=date.today().isoformat(),
     )
 
 
@@ -570,6 +1043,128 @@ def _operacional_contexto(config, args):
     return dados, filtros
 
 
+def _texto_busca(valor):
+    texto = str(valor or "").strip()
+    if not texto:
+        return ""
+    return texto
+
+
+def _filtros_relatorio_request(source):
+    source = source or {}
+    return {
+        "matricula": _texto_busca(source.get("matricula", "")),
+        "nome": _texto_busca(source.get("nome", "")),
+        "departamento": _texto_busca(source.get("departamento", "")),
+        "turno": _texto_busca(source.get("turno", "")),
+        "periodo_inicio": _texto_busca(source.get("periodo_inicio", source.get("data_inicial", ""))),
+        "periodo_fim": _texto_busca(source.get("periodo_fim", source.get("data_final", ""))),
+    }
+
+
+def _resumo_filtros(filtros):
+    itens = []
+    labels = {
+        "matricula": "Matrícula",
+        "nome": "Nome",
+        "departamento": "Departamento",
+        "turno": "Turno",
+        "periodo_inicio": "Período inicial",
+        "periodo_fim": "Período final",
+    }
+    for chave, rotulo in labels.items():
+        valor = str((filtros or {}).get(chave, "")).strip()
+        if valor:
+            itens.append({"label": rotulo, "value": valor})
+    return itens
+
+
+def _opcoes_relatorio(config):
+    opcoes = {
+        "departamentos": [],
+        "turnos": [],
+        "funcionarios": [],
+    }
+    if not config_store.esta_configurado(config):
+        return opcoes
+    try:
+        funcionarios = _enriquecer_funcionarios_com_extras(ponto_core.listar_funcionarios(config))
+    except Exception:
+        funcionarios = []
+
+    nomes = []
+    matriculas = []
+    departamentos = []
+    turnos = []
+    for funcionario in funcionarios:
+        nome = str(funcionario.get("name", "") or "").strip()
+        matricula = str(funcionario.get("enrollid", "") or "").strip()
+        departamento = str(funcionario.get("department", "") or "").strip()
+        turno = str(funcionario.get("shift_name", "") or "").strip()
+        if nome:
+            nomes.append(nome)
+        if matricula:
+            matriculas.append(matricula)
+        if departamento:
+            departamentos.append(departamento)
+        if turno:
+            turnos.append(turno)
+
+    opcoes["funcionarios"] = sorted(set(nomes), key=lambda valor: valor.lower())
+    opcoes["matriculas"] = sorted(
+        set(matriculas),
+        key=lambda valor: (0, int(valor)) if valor.isdigit() else (1, valor.lower()),
+    )
+    opcoes["departamentos"] = sorted(set(departamentos), key=lambda valor: valor.lower())
+    opcoes["turnos"] = sorted(set(turnos), key=lambda valor: valor.lower())
+    return opcoes
+
+
+def _paginacao_total(total_itens, page, per_page):
+    per_page = max(1, int(per_page or 20))
+    total = int(total_itens or 0)
+    total_paginas = max(1, (total + per_page - 1) // per_page)
+    page = max(1, min(int(page or 1), total_paginas))
+    return {
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "pages": total_paginas,
+        "has_prev": page > 1,
+        "has_next": page < total_paginas,
+        "prev_page": max(1, page - 1),
+        "next_page": min(total_paginas, page + 1),
+    }
+
+
+def _aplicar_paginacao(lista, page=1, per_page=20):
+    paginacao = _paginacao_total(len(lista or []), page, per_page)
+    inicio = (paginacao["page"] - 1) * paginacao["per_page"]
+    fim = inicio + paginacao["per_page"]
+    return (lista or [])[inicio:fim], paginacao
+
+
+def _filtrar_funcionarios(lista, filtros):
+    filtros = filtros or {}
+    termo = _texto_busca(filtros.get("q", ""))
+    departamento = _texto_busca(filtros.get("departamento", "")).lower()
+    if not termo and not departamento:
+        return list(lista or [])
+
+    filtrados = []
+    for item in lista or []:
+        nome = str(item.get("name", "") or "")
+        matricula = str(item.get("enrollid", "") or "")
+        depto = str(item.get("department", "") or "")
+        texto = "{} {} {}".format(matricula, nome, depto).lower()
+        if termo and termo.lower() not in texto:
+            continue
+        if departamento and departamento not in depto.lower():
+            continue
+        filtrados.append(item)
+    return filtrados
+
+
 @app.route("/conferencia", methods=["GET"])
 def conferencia():
     config = config_atual()
@@ -578,6 +1173,15 @@ def conferencia():
         return redirect(url_for("configuracoes"))
 
     dados, filtros = _operacional_contexto(config, request.args)
+    try:
+        pagina = int(request.args.get("page", 1))
+    except ValueError:
+        pagina = 1
+    try:
+        por_pagina = int(request.args.get("per_page", 12))
+    except ValueError:
+        por_pagina = 12
+    grupos_paginados, paginacao = _aplicar_paginacao(dados["grupos"], pagina, por_pagina)
     turnos = []
     try:
         turnos = ponto_core.get_shifts(config)
@@ -595,7 +1199,8 @@ def conferencia():
         config=config,
         configurado=True,
         filtro=filtros,
-        conferencias=dados["grupos"],
+        conferencias=grupos_paginados,
+        paginacao=paginacao,
         departamentos=dados["departamentos"],
         registros=dados["registros"],
         totais={
@@ -664,54 +1269,19 @@ def conferencia_exportar(formato):
     nome_arquivo = _nome_arquivo_operacional(formato, inicio, fim)
     caminho = os.path.join(output_dir, nome_arquivo)
 
-    linhas = []
-    for item in dados["registros"]:
-        linhas.append([
-            item.get("data", ""),
-            item.get("hora", ""),
-            item.get("enrollid", ""),
-            item.get("name", ""),
-            item.get("department", ""),
-            item.get("shift_name", ""),
-            item.get("acao", ""),
-            item.get("source", ""),
-            item.get("observacao_ajuste", ""),
-        ])
+    espelhos = [_espelho_por_funcionario(grupo, config) for grupo in dados["grupos"]]
+    cabecalhos_csv, linhas_csv = _linhas_espelho_exportacao(espelhos)
 
-    cabecalhos = ["Data", "Hora", "Matricula", "Nome", "Departamento", "Turno", "Acao", "Fonte", "Observacao"]
     if formato == "csv":
-        with open(caminho, "wb") as f_csv:
+        with open(caminho, "w", newline="", encoding="utf-8-sig") as f_csv:
             writer = csv.writer(f_csv, delimiter=";")
-            writer.writerow(cabecalhos)
-            for linha in linhas:
+            writer.writerow(cabecalhos_csv)
+            for linha in linhas_csv:
                 writer.writerow(linha)
     elif formato == "xlsx":
-        from openpyxl import Workbook
-        from openpyxl.styles import Font
-
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Detalhe"
-        ws.append(cabecalhos)
-        for linha in linhas:
-            ws.append(linha)
-        for cel in ws[1]:
-            cel.font = Font(bold=True)
-
-        ws2 = wb.create_sheet("Resumo")
-        ws2.append(["Departamento", "Registros", "Entradas", "Saidas"])
-        for cel in ws2[1]:
-            cel.font = Font(bold=True)
-        for dep in dados["departamentos"]:
-            ws2.append([dep["name"], dep["total"], dep["entradas"], dep["saidas"]])
-        wb.save(caminho)
+        _salvar_espelho_conferencia_xlsx(caminho, config, inicio, fim, espelhos, dados["grupos"])
     else:
-        titulo = "Relatorio Operacional"
-        subtitulo = "{} a {}".format(inicio.strftime("%d/%m/%Y"), fim.strftime("%d/%m/%Y"))
-        resumo = [["Departamento", "Registros", "Entradas", "Saidas"]]
-        for dep in dados["departamentos"]:
-            resumo.append([dep["name"], dep["total"], dep["entradas"], dep["saidas"]])
-        ponto_core._gerar_pdf_texto(caminho, titulo, subtitulo, resumo[0], resumo[1:])
+        _salvar_espelho_conferencia_pdf(caminho, config, inicio, fim, espelhos)
 
     return send_from_directory(output_dir, nome_arquivo, as_attachment=True)
 
@@ -873,6 +1443,7 @@ def auditoria_logs():
 @app.route("/gerar", methods=["POST"])
 def gerar():
     tipo = request.form.get("tipo")
+    filtros = _filtros_relatorio_request(request.form)
     if tipo == "semana":
         inicio, fim = ponto_core.periodo_semana_passada()
         nome_periodo = "Semanal"
@@ -887,8 +1458,8 @@ def gerar():
         nome_periodo = "MesAtual"
     elif tipo == "personalizado":
         try:
-            inicio = _data_form(request.form.get("data_inicial", ""))
-            fim = _data_form(request.form.get("data_final", ""))
+            inicio = _data_form(filtros["periodo_inicio"])
+            fim = _data_form(filtros["periodo_fim"])
             if inicio is None or fim is None:
                 raise ValueError
         except ValueError:
@@ -912,7 +1483,7 @@ def gerar():
     else:
         flash("Escolha um periodo valido.", "erro")
         return redirect(url_for("index"))
-    return _iniciar_geracao_relatorio(inicio, fim, nome_periodo)
+    return _iniciar_geracao_relatorio(inicio, fim, nome_periodo, filtros=filtros)
 
 
 @app.route("/validacao-inicial", methods=["POST"])
@@ -1005,9 +1576,23 @@ def funcionarios():
         flash("Configure o IP e a senha do leitor antes de gerenciar funcionarios.", "erro")
         return redirect(url_for("configuracoes"))
 
+    filtros = {
+        "q": request.args.get("q", "").strip(),
+        "departamento": request.args.get("departamento", "").strip(),
+    }
+    try:
+        pagina = int(request.args.get("page", 1))
+    except ValueError:
+        pagina = 1
+    try:
+        por_pagina = int(request.args.get("per_page", 12))
+    except ValueError:
+        por_pagina = 12
+
     try:
         lista = ponto_core.listar_funcionarios(config)
         lista = _enriquecer_funcionarios_com_extras(lista)
+        lista = _filtrar_funcionarios(lista, filtros)
         proximo_id = ponto_core.get_next_enrollid(config)
         turnos = ponto_core.get_shifts(config)
         erro = None
@@ -1017,7 +1602,17 @@ def funcionarios():
         turnos = []
         erro = str(e)
 
-    return render_template("funcionarios.html", funcionarios=lista, proximo_id=proximo_id, erro=erro, turnos=turnos)
+    funcionarios_paginados, paginacao = _aplicar_paginacao(lista, pagina, por_pagina)
+
+    return render_template(
+        "funcionarios.html",
+        funcionarios=funcionarios_paginados,
+        proximo_id=proximo_id,
+        erro=erro,
+        turnos=turnos,
+        filtro_funcionarios=filtros,
+        paginacao=paginacao,
+    )
 
 
 @app.route("/funcionarios/novo", methods=["POST"])
@@ -1066,7 +1661,7 @@ def funcionarios_novo():
         ponto_core.set_user_info(config, enrollid, nome, departamento, shiftid=shiftid)
         if cpf:
             cadastro_local.salvar_cpf(enrollid, cpf)
-        cadastro_local.salvar_dados_profissionais(enrollid, pis=pis, ctps=ctps, data_admissao=data_admissao)
+        cadastro_local.salvar_dados_profissionais(enrollid, pis=pis, ctps=ctps, data_admissao=data_admissao, department=departamento)
         auditoria.registrar_evento("cadastro_funcionario", "Funcionario {} cadastrado".format(enrollid))
         flash(
             "Funcionario \"{}\" cadastrado com a matricula {}. Agora falta cadastrar a face dele "
@@ -1108,7 +1703,7 @@ def funcionarios_editar(enrollid):
     try:
         ponto_core.set_user_info(config, enrollid, nome, departamento, shiftid=shiftid)
         cadastro_local.salvar_cpf(enrollid, cpf)
-        cadastro_local.salvar_dados_profissionais(enrollid, pis=pis, ctps=ctps, data_admissao=data_admissao)
+        cadastro_local.salvar_dados_profissionais(enrollid, pis=pis, ctps=ctps, data_admissao=data_admissao, department=departamento)
         auditoria.registrar_evento("edicao_funcionario", "Funcionario {} atualizado".format(enrollid))
         flash("Dados de \"{}\" atualizados.".format(nome), "ok")
     except DeviceError as e:
@@ -1155,6 +1750,7 @@ def funcionario_perfil(enrollid):
         if not funcionario:
             flash("Funcionario nao encontrado no leitor.", "erro")
             return redirect(url_for("funcionarios"))
+        funcionario["department"] = _departamento_efetivo(enrollid, funcionario.get("department", ""))
 
         extras = cadastro_local.obter_funcionario(enrollid)
         return render_template(
@@ -1285,6 +1881,7 @@ def funcionario_exportar(enrollid, formato):
         if not funcionario:
             flash("Funcionario nao encontrado no leitor.", "erro")
             return redirect(url_for("funcionarios"))
+        funcionario["department"] = _departamento_efetivo(enrollid, funcionario.get("department", ""))
         extras = cadastro_local.obter_funcionario(enrollid)
     except DeviceError as e:
         flash(str(e), "erro")
@@ -1299,66 +1896,130 @@ def funcionario_exportar(enrollid, formato):
     caminho = os.path.join(output_dir, nome_arquivo)
 
     resumo = [
-        ["Matrícula", funcionario.get("enrollid", "")],
+        ["Matricula", funcionario.get("enrollid", "")],
         ["Nome", funcionario.get("name", "")],
         ["Departamento", funcionario.get("department", "")],
         ["Turno", funcionario.get("shift_name", "")],
         ["CPF", extras.get("cpf", "")],
         ["PIS", extras.get("pis", "")],
         ["CTPS", extras.get("ctps", "")],
-        ["Admissão", _data_iso_para_display(extras.get("data_admissao", ""))],
+        ["Admissao", _data_iso_para_display(extras.get("data_admissao", ""))],
         ["Atestados", len(extras.get("atestados", []) or [])],
-        ["Afastamentos/Licenças", len(extras.get("afastamentos", []) or [])],
+        ["Afastamentos/Licencas", len(extras.get("afastamentos", []) or [])],
     ]
 
     if formato == "xlsx":
         from openpyxl import Workbook
-        from openpyxl.styles import Font, Alignment
+        from openpyxl.styles import Font, Alignment, PatternFill
+        from openpyxl.utils import get_column_letter
 
         wb = Workbook()
+        ident = _identificacao_relatorio(config)
+        periodo_txt = "Gerado em {}".format(datetime.now().strftime("%d/%m/%Y %H:%M"))
+
         ws = wb.active
         ws.title = "Cadastro"
+        ws.sheet_properties.tabColor = "1F4E78"
+        ws.append(["Perfil do Funcionario"])
+        ws.append(["Empresa: {}{}".format(ident["empresa"], " | CNPJ/CPF: {}".format(ident["documento"]) if ident["documento"] else "")])
+        ws.append(["Local: {}{}".format(ident["local"], " | REP: {}".format(ident["rep"]) if ident["rep"] else "")])
+        ws.append([periodo_txt])
+        ws.append([])
         ws.append(["Campo", "Valor"])
-        for cel in ws[1]:
-            cel.font = Font(bold=True)
+        header_row = ws.max_row
+        for row_idx in (1, 2, 3, 4):
+            ws.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=2)
+        ws["A1"].font = Font(size=14, bold=True, color="1F4E78")
+        ws["A2"].font = Font(size=10, italic=True, color="4A5568")
+        ws["A3"].font = Font(size=10, italic=True, color="4A5568")
+        ws["A4"].font = Font(size=9, bold=True, color="718096")
+        for cel in ws[header_row]:
+            cel.font = Font(bold=True, color="1F2937")
+            cel.fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+            cel.alignment = Alignment(horizontal="center", vertical="center")
         for linha in resumo:
             ws.append(linha)
-        ws.column_dimensions["A"].width = 24
-        ws.column_dimensions["B"].width = 40
-        for cell in ws["A"]:
-            cell.font = Font(bold=True)
-        for row in ws.iter_rows():
+        for idx, row in enumerate(ws.iter_rows(min_row=header_row + 1, max_row=ws.max_row), start=1):
             for cel in row:
                 cel.alignment = Alignment(vertical="top")
+                cel.fill = PatternFill(start_color="F7FAFC" if idx % 2 else "EEF3F8", end_color="F7FAFC" if idx % 2 else "EEF3F8", fill_type="solid")
+            row[0].font = Font(bold=True, color="1F2937")
+        ws.freeze_panes = ws["A{}".format(header_row + 1)]
+        ws.auto_filter.ref = "A{}:B{}".format(header_row, ws.max_row)
+        ws.column_dimensions["A"].width = 28
+        ws.column_dimensions["B"].width = 48
 
-        ws2 = wb.create_sheet("Afastamentos")
+        ws2 = wb.create_sheet("Documentos")
+        ws2.sheet_properties.tabColor = "0052A3"
+        ws2.append(["Afastamentos"])
+        ws2.append(["Funcionario: {}".format(funcionario.get("name", ""))])
+        ws2.append(["Matricula: {}".format(funcionario.get("enrollid", ""))])
+        ws2.append([])
         ws2.append(["Tipo", "Inicio", "Fim", "Observacoes", "Criado em"])
-        for cel in ws2[1]:
-            cel.font = Font(bold=True)
+        header_row2 = ws2.max_row
+        for row_idx in (1, 2, 3):
+            ws2.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=5)
+        for cel in ws2[header_row2]:
+            cel.font = Font(bold=True, color="1F2937")
+            cel.fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+            cel.alignment = Alignment(horizontal="center", vertical="center")
         for item in extras.get("afastamentos", []) or []:
             ws2.append([
                 item.get("tipo", ""),
                 _data_iso_para_display(item.get("data_inicio", "")),
                 _data_iso_para_display(item.get("data_fim", "")),
                 item.get("observacoes", ""),
-                item.get("criado_em", ""),
+                _data_hora_para_display(item.get("criado_em", "")),
             ])
+        for idx, row in enumerate(ws2.iter_rows(min_row=header_row2 + 1, max_row=ws2.max_row), start=1):
+            for cel in row:
+                cel.alignment = Alignment(vertical="top")
+                cel.fill = PatternFill(start_color="F7FAFC" if idx % 2 else "EEF3F8", end_color="F7FAFC" if idx % 2 else "EEF3F8", fill_type="solid")
+        ws2.freeze_panes = ws2["A{}".format(header_row2 + 1)]
+        ws2.auto_filter.ref = "A{}:E{}".format(header_row2, ws2.max_row)
+        ws2.column_dimensions["A"].width = 18
+        ws2.column_dimensions["B"].width = 14
+        ws2.column_dimensions["C"].width = 14
+        ws2.column_dimensions["D"].width = 34
+        ws2.column_dimensions["E"].width = 18
+
         ws3 = wb.create_sheet("Atestados")
+        ws3.sheet_properties.tabColor = "FF6B35"
+        ws3.append(["Atestados"])
+        ws3.append(["Funcionario: {}".format(funcionario.get("name", ""))])
+        ws3.append(["Matricula: {}".format(funcionario.get("enrollid", ""))])
+        ws3.append([])
         ws3.append(["Arquivo", "Emissao", "Validade", "Observacoes", "Criado em"])
-        for cel in ws3[1]:
-            cel.font = Font(bold=True)
+        header_row3 = ws3.max_row
+        for row_idx in (1, 2, 3):
+            ws3.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=5)
+        for cel in ws3[header_row3]:
+            cel.font = Font(bold=True, color="1F2937")
+            cel.fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+            cel.alignment = Alignment(horizontal="center", vertical="center")
         for item in extras.get("atestados", []) or []:
             ws3.append([
                 item.get("nome_original", ""),
                 _data_iso_para_display(item.get("data_emissao", "")),
                 _data_iso_para_display(item.get("validade_ate", "")),
                 item.get("observacoes", ""),
-                item.get("criado_em", ""),
+                _data_hora_para_display(item.get("criado_em", "")),
             ])
+        for idx, row in enumerate(ws3.iter_rows(min_row=header_row3 + 1, max_row=ws3.max_row), start=1):
+            for cel in row:
+                cel.alignment = Alignment(vertical="top")
+                cel.fill = PatternFill(start_color="F7FAFC" if idx % 2 else "EEF3F8", end_color="F7FAFC" if idx % 2 else "EEF3F8", fill_type="solid")
+        ws3.freeze_panes = ws3["A{}".format(header_row3 + 1)]
+        ws3.auto_filter.ref = "A{}:E{}".format(header_row3, ws3.max_row)
+        ws3.column_dimensions["A"].width = 32
+        ws3.column_dimensions["B"].width = 14
+        ws3.column_dimensions["C"].width = 14
+        ws3.column_dimensions["D"].width = 34
+        ws3.column_dimensions["E"].width = 18
         wb.save(caminho)
     else:
         titulo = "Perfil do Funcionario"
-        subtitulo = "{} - Matrícula {}".format(funcionario.get("name", ""), funcionario.get("enrollid", ""))
+        subtitulo = "{} - Matricula {}".format(funcionario.get("name", ""), funcionario.get("enrollid", ""))
         linhas_pdf = []
         for campo, valor in resumo:
             linhas_pdf.append(["Cadastro", campo, str(valor), "", ""])
@@ -1382,7 +2043,7 @@ def funcionario_exportar(enrollid, formato):
             caminho,
             titulo,
             subtitulo,
-            ["Seção", "Campo", "Início", "Fim", "Detalhe"],
+            ["Seccao", "Campo", "Inicio", "Fim", "Detalhe"],
             linhas_pdf,
         )
 
@@ -1449,6 +2110,10 @@ def configuracoes():
         if nova_senha:
             config["device_password"] = nova_senha
         config["company_name"] = request.form.get("company_name", "").strip() or "Minha Empresa"
+        config["company_document"] = request.form.get("company_document", "").strip()
+        config["workplace_address"] = request.form.get("workplace_address", "").strip()
+        config["rep_identifier"] = request.form.get("rep_identifier", "").strip()
+        config["output_dir"] = request.form.get("output_dir", "").strip() or config.get("output_dir", "relatorios")
 
         config["notificacoes_ativas"] = request.form.get("notificacoes_ativas") == "on"
         try:
@@ -1508,7 +2173,6 @@ def _abrir_navegador():
 
 if __name__ == "__main__":
     threading.Thread(target=_abrir_navegador, daemon=True).start()
-    notificacoes.iniciar_em_segundo_plano()
     # host 0.0.0.0 permite acessar de outros computadores na mesma rede,
     # se so voce for usar, pode trocar pra "127.0.0.1"
     app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)

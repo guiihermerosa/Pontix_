@@ -54,6 +54,7 @@ def _chave(enrollid):
 def _registro(dados, enrollid):
     chave = _chave(enrollid)
     registro = dados.setdefault(chave, {
+        "department": "",
         "cpf": "",
         "pis": "",
         "ctps": "",
@@ -61,6 +62,7 @@ def _registro(dados, enrollid):
         "atestados": [],
         "afastamentos": [],
     })
+    registro.setdefault("department", "")
     registro.setdefault("cpf", "")
     registro.setdefault("pis", "")
     registro.setdefault("ctps", "")
@@ -86,6 +88,7 @@ def obter_resumo(enrollid):
         dados = _carregar()
         registro = copy.deepcopy(_registro(dados, enrollid))
     return {
+        "department": registro.get("department", ""),
         "cpf": registro.get("cpf", ""),
         "pis": registro.get("pis", ""),
         "ctps": registro.get("ctps", ""),
@@ -117,10 +120,11 @@ def salvar_cpf(enrollid, cpf):
     return cpf
 
 
-def salvar_dados_profissionais(enrollid, pis="", ctps="", data_admissao=""):
+def salvar_dados_profissionais(enrollid, pis="", ctps="", data_admissao="", department=None):
     pis = "".join(ch for ch in (pis or "") if ch.isdigit())
     ctps = "".join(ch for ch in (ctps or "") if ch.isdigit())
     data_admissao = (data_admissao or "").strip()
+    department = None if department is None else (department or "").strip()
     if data_admissao:
         try:
             data_admissao = datetime.strptime(data_admissao, "%Y-%m-%d").date().isoformat()
@@ -129,11 +133,13 @@ def salvar_dados_profissionais(enrollid, pis="", ctps="", data_admissao=""):
     with _LOCK:
         dados = _carregar()
         registro = _registro(dados, enrollid)
+        if department is not None:
+            registro["department"] = department
         registro["pis"] = pis
         registro["ctps"] = ctps
         registro["data_admissao"] = data_admissao
         _salvar(dados)
-    return {"pis": pis, "ctps": ctps, "data_admissao": data_admissao}
+    return {"department": department if department is not None else registro.get("department", ""), "pis": pis, "ctps": ctps, "data_admissao": data_admissao}
 
 
 def _extensao_permitida(nome_arquivo):

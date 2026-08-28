@@ -1,0 +1,459 @@
+/* ============================================================================
+   Typography Utilities & Font Setup
+   Font definitions, text size utilities, and typography classes
+   ============================================================================ */
+
+@import url('./_variables.css');
+
+/* ============================================================================
+   FONT IMPORTS
+   Import Inter and JetBrains Mono from system or Google Fonts
+   ============================================================================ */
+
+/* Inter - Primary sans-serif font */
+@font-face {
+  font-family: 'Inter';
+  src: local('Inter'), local('Inter-Regular'),
+       url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQnMwcuRhygTV.woff2') format('woff2'),
+       url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQnMwcpx1xgTV.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: local('Inter Medium'), local('Inter-Medium'),
+       url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQnMwcuRhygTV.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: local('Inter SemiBold'), local('Inter-SemiBold'),
+       url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQnMwcuRhygTV.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: local('Inter Bold'), local('Inter-Bold'),
+       url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQnMwcuRhygTV.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* JetBrains Mono - Monospace font for code */
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: local('JetBrains Mono'), local('JetBrainsMono-Regular'),
+       url('https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flFQwYJEV86PoWqdQw60.woff2') format('woff2'),
+       url('https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flFQwYJEV86PoWqdQw60.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: local('JetBrains Mono Bold'), local('JetBrainsMono-Bold'),
+       url('https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flFQwYJEV86PoWqdQw60.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================================
+   TEXT SIZE UTILITY CLASSES
+   Typography scale from --text-xs to --text-3xl tokens
+   ============================================================================ */
+
+/* Extra Small - 12px */
+.text-xs {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-line-height);
+  font-weight: var(--text-xs-weight);
+}
+
+/* Small - 13px */
+.text-sm {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-line-height);
+  font-weight: var(--text-sm-weight);
+}
+
+/* Base - 14px (default body size) */
+.text-base {
+  font-size: var(--text-base);
+  line-height: var(--text-base-line-height);
+  font-weight: var(--text-base-weight);
+}
+
+/* Large - 16px */
+.text-lg {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-line-height);
+  font-weight: var(--text-lg-weight);
+}
+
+/* Extra Large - 18px */
+.text-xl {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-line-height);
+  font-weight: var(--text-xl-weight);
+}
+
+/* 2XL - 21px */
+.text-2xl {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-line-height);
+  font-weight: var(--text-2xl-weight);
+}
+
+/* 3XL - 24px */
+.text-3xl {
+  font-size: var(--text-3xl);
+  line-height: var(--text-3xl-line-height);
+  font-weight: var(--text-3xl-weight);
+}
+
+/* ============================================================================
+   TEXT COLOR UTILITY CLASSES
+   Semantic color utilities for different text purposes
+   ============================================================================ */
+
+/* Primary text color - default content */
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+/* Muted text color - secondary content, labels */
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+/* Error text color - validation messages, destructive actions */
+.text-error {
+  color: var(--color-error);
+}
+
+/* Success text color - confirmation, positive feedback */
+.text-success {
+  color: var(--color-success);
+}
+
+/* Warning text color - alerts, warnings */
+.text-warning {
+  color: var(--color-warning);
+}
+
+/* Info text color - informational messages */
+.text-info {
+  color: var(--color-info);
+}
+
+/* Brand accent color - highlights, CTAs */
+.text-accent {
+  color: var(--grb-accent);
+}
+
+/* Monospace text color */
+.text-mono {
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* ============================================================================
+   FONT WEIGHT UTILITY CLASSES
+   Control font weight for emphasis and hierarchy
+   ============================================================================ */
+
+.font-regular {
+  font-weight: var(--font-regular);
+}
+
+.font-medium {
+  font-weight: var(--font-medium);
+}
+
+.font-semibold {
+  font-weight: var(--font-semibold);
+}
+
+.font-bold {
+  font-weight: var(--font-bold);
+}
+
+/* ============================================================================
+   HEADING UTILITY CLASSES
+   Alternative to HTML heading elements for semantic flexibility
+   ============================================================================ */
+
+/* H1 style - 24px / bold / hero titles */
+.h1 {
+  font-size: var(--text-3xl);
+  line-height: var(--text-3xl-line-height);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* H2 style - 21px / semibold / section titles */
+.h2 {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-line-height);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* H3 style - 18px / semibold / subsection titles */
+.h3 {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-line-height);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* H4 style - 16px / medium / card titles */
+.h4 {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-line-height);
+  font-weight: var(--font-medium);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* H5 style - 14px / semibold / minor titles */
+.h5 {
+  font-size: var(--text-base);
+  line-height: var(--text-base-line-height);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* H6 style - 13px / semibold / smallest titles */
+.h6 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-line-height);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ============================================================================
+   MONOSPACE TEXT UTILITIES
+   Letter spacing and font utilities for monospace typography
+   ============================================================================ */
+
+/* Monospace font family */
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* Letter spacing utilities for monospace */
+.letter-normal {
+  letter-spacing: var(--letter-normal);
+}
+
+.letter-tight {
+  letter-spacing: var(--letter-tight);
+}
+
+.letter-wide {
+  letter-spacing: var(--letter-wide);
+}
+
+.letter-wide-2 {
+  letter-spacing: var(--letter-wide-2);
+}
+
+/* ============================================================================
+   TEXT TRANSFORM UTILITIES
+   Case transformation utilities
+   ============================================================================ */
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+.lowercase {
+  text-transform: lowercase;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+.normal-case {
+  text-transform: none;
+}
+
+/* ============================================================================
+   TEXT ALIGNMENT UTILITIES
+   Text alignment control
+   ============================================================================ */
+
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-justify {
+  text-align: justify;
+}
+
+/* ============================================================================
+   LINE HEIGHT UTILITIES
+   Control line height for readability
+   ============================================================================ */
+
+.leading-tight {
+  line-height: 1.2;
+}
+
+.leading-normal {
+  line-height: 1.5;
+}
+
+.leading-relaxed {
+  line-height: 1.75;
+}
+
+.leading-loose {
+  line-height: 2;
+}
+
+/* ============================================================================
+   WHITESPACE HANDLING
+   Text wrapping and overflow utilities
+   ============================================================================ */
+
+/* Prevent text wrapping */
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+
+/* Allow text wrapping */
+.whitespace-normal {
+  white-space: normal;
+}
+
+/* Preserve whitespace */
+.whitespace-pre {
+  white-space: pre;
+}
+
+/* Collapse whitespace */
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+}
+
+/* ============================================================================
+   TEXT OVERFLOW & TRUNCATION
+   Handle text overflow with ellipsis and truncation
+   ============================================================================ */
+
+/* Truncate text with ellipsis - single line */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Multiline truncate - show 2 lines then ellipsis */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Multiline truncate - show 3 lines then ellipsis */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Multiline truncate - show 4 lines then ellipsis */
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   RESPONSIVE TEXT SIZE UTILITIES
+   Text sizes that change based on breakpoints
+   ============================================================================ */
+
+@media (max-width: 640px) {
+  /* Stack down on mobile */
+  .sm\:text-xs {
+    font-size: var(--text-xs);
+  }
+
+  .sm\:text-sm {
+    font-size: var(--text-sm);
+  }
+
+  .sm\:text-base {
+    font-size: var(--text-base);
+  }
+
+  .sm\:text-lg {
+    font-size: var(--text-lg);
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Medium screens */
+  .md\:text-lg {
+    font-size: var(--text-lg);
+  }
+
+  .md\:text-xl {
+    font-size: var(--text-xl);
+  }
+
+  .md\:text-2xl {
+    font-size: var(--text-2xl);
+  }
+}
+
+@media (min-width: 1025px) {
+  /* Desktop screens */
+  .lg\:text-xl {
+    font-size: var(--text-xl);
+  }
+
+  .lg\:text-2xl {
+    font-size: var(--text-2xl);
+  }
+
+  .lg\:text-3xl {
+    font-size: var(--text-3xl);
+  }
+}
+
+/* ============================================================================
+   END OF TYPOGRAPHY UTILITIES
+   ============================================================================ */

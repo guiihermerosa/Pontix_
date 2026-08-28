@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <a class="skip-to-main" href="#conteudo-principal">Pular para o conteudo principal</a>
+
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegacao principal">
+        <a class="sidebar-brand" href="{{ url_for('index') }}">
+          <div class="sidebar-brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+          <div class="sidebar-brand-text">
+            <strong>{{ app_name }}</strong>
+            <small>{{ configuracao.company_name or 'Empresa' }}</small>
+          </div>
+        </a>
+
+        <div class="sidebar-panel">
+          <div class="sidebar-panel-label">Menu lateral</div>
+          <nav class="sidebar-nav">
+            <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}ativo{% endif %}"{% if request.endpoint == 'index' %} aria-current="page"{% endif %}>
+              <span class="nav-icon" aria-hidden="true">IN</span>
+              <span>Resumo</span>
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}ativo{% endif %}"{% if request.endpoint == 'dashboard' %} aria-current="page"{% endif %}>
+              <span class="nav-icon" aria-hidden="true">DB</span>
+              <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('conferencia') }}" class="{% if request.endpoint == 'conferencia' %}ativo{% endif %}"{% if request.endpoint == 'conferencia' %} aria-current="page"{% endif %}>
+              <span class="nav-icon" aria-hidden="true">CF</span>
+              <span>Conferencia</span>
+            </a>
+            <a href="{{ url_for('relatorios') }}" class="{% if request.endpoint == 'relatorios' %}ativo{% endif %}"{% if request.endpoint == 'relatorios' %} aria-current="page"{% endif %}>
+              <span class="nav-icon" aria-hidden="true">RP</span>
+              <span>Relatorios</span>
+            </a>
+            <a href="{{ url_for('funcionarios') }}" class="{% if request.endpoint and request.endpoint.startswith('funcionarios') and request.endpoint not in ['funcionarios_proximo_id', 'funcionarios_verificar_id'] %}ativo{% endif %}"{% if request.endpoint and request.endpoint.startswith('funcionarios') and request.endpoint not in ['funcionarios_proximo_id', 'funcionarios_verificar_id'] %} aria-current="page"{% endif %}>
+              <span class="nav-icon" aria-hidden="true">FL</span>
+              <span>Funcionarios</span>
+            </a>
+            <a href="{{ url_for('turnos') }}" class="{% if request.endpoint == 'turnos' %}ativo{% endif %}"{% if request.endpoint == 'turnos' %} aria-current="page"{% endif %}>
+              <span class="nav-icon" aria-hidden="true">TN</span>
+              <span>Turnos</span>
+            </a>
+            <a href="{{ url_for('regras') }}" class="{% if request.endpoint == 'regras' %}ativo{% endif %}"{% if request.endpoint == 'regras' %} aria-current="page"{% endif %}>
+              <span class="nav-icon" aria-hidden="true">RG</span>
+              <span>Regras</span>
+            </a>
+            <a href="{{ url_for('auditoria_view') }}" class="{% if request.endpoint == 'auditoria_view' %}ativo{% endif %}"{% if request.endpoint == 'auditoria_view' %} aria-current="page"{% endif %}>
+              <span class="nav-icon" aria-hidden="true">AU</span>
+              <span>Auditoria</span>
+            </a>
+            <a href="{{ url_for('configuracoes') }}" class="{% if request.endpoint == 'configuracoes' %}ativo{% endif %}"{% if request.endpoint == 'configuracoes' %} aria-current="page"{% endif %}>
+              <span class="nav-icon" aria-hidden="true">CG</span>
+              <span>Configuracoes</span>
+            </a>
+          </nav>
+        </div>
+
+        <div class="sidebar-panel sidebar-panel-bottom">
+          <div class="sidebar-panel-label">Sistema</div>
+          <div class="sidebar-status">
+            <span class="status-dot {% if configuracao.device_password %}online{% else %}offline{% endif %}"></span>
+            <div>
+              <strong>{% if configuracao.device_password %}Leitor pronto{% else %}Leitor pendente{% endif %}</strong>
+              <small>{% if configuracao.device_ip %}{{ configuracao.device_ip }}:{{ configuracao.device_port }}{% else %}Sem IP configurado{% endif %}</small>
+            </div>
+          </div>
+          <div class="sidebar-footer-note">
+            Feito por GRB-Tecnologia
+          </div>
+        </div>
+      </aside>
+
+      <div class="main-shell">
+        <header class="topbar">
+          <div class="topbar-title">
+            <span class="topbar-eyebrow">{{ configuracao.company_name or 'Empresa' }}</span>
+            <h1>{{ app_name }}</h1>
+            <p>{% block subtitle %}Painel de gestao de ponto com interface responsiva e foco operacional{% endblock %}</p>
+          </div>
+          <div class="topbar-actions">
+            <span class="topbar-chip">{% if configuracao.device_password %}Configurado{% else %}Aguardando configuracao{% endif %}</span>
+            <span class="topbar-chip">GRB Tecnologia</span>
+          </div>
+        </header>
+
+        <main class="conteudo" id="conteudo-principal">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="stack-gap">
+                {% for category, message in messages %}
+                  <div class="cartao {% if category == 'erro' %}cartao-alerta{% endif %}">
+                    <strong>{{ message }}</strong>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+
+          {% block content %}{% endblock %}
+        </main>
+
+        <footer class="rodape">
+          <span>{{ configuracao.company_name or 'Empresa' }}</span>
+          <span>Feito por GRB-Tecnologia</span>
+          <span>{% if configuracao.device_ip %}Leitor {{ configuracao.device_ip }}:{{ configuracao.device_port }}{% else %}Leitor ainda nao configurado{% endif %}</span>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>

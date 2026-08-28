@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Gerando relatório • {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="cartao cartao-central">
+  <span class="chip">Processamento em andamento</span>
+  <h1>Gerando relatório</h1>
+  <p class="subtitulo">Aguarde enquanto o sistema prepara o arquivo com as informações solicitadas.</p>
+
+  <div class="mini-card stack-gap" style="max-width: 720px; margin: var(--space-6) auto 0;">
+    <div class="dashboard-live-badge" id="gerando-status">Preparando geração...</div>
+    <div style="width:100%; height:12px; border-radius:999px; background: rgba(160,174,192,0.18); overflow:hidden;">
+      <div id="gerando-barra" style="width: 8%; height:100%; border-radius:999px; background: linear-gradient(135deg, var(--grb-blue-medium), var(--grb-accent)); transition: width 200ms ease;"></div>
+    </div>
+    <p class="subtitulo" id="gerando-detalhe">A tela vai atualizar automaticamente quando o arquivo estiver pronto.</p>
+    <div class="actions-row" style="justify-content:center;">
+      <a class="botao botao-secundario" href="{{ url_for('index') }}">Voltar ao início</a>
+      <a class="botao botao-terciario" href="{{ url_for('dashboard') }}">Abrir dashboard</a>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    const statusEl = document.getElementById('gerando-status');
+    const detalheEl = document.getElementById('gerando-detalhe');
+    const barraEl = document.getElementById('gerando-barra');
+    let intervaloId = null;
+    let downloadIniciado = false;
+    if (!statusEl || !detalheEl || !barraEl) return;
+
+    async function atualizar() {
+      try {
+        const response = await fetch('{{ url_for("progresso") }}');
+        const data = await response.json();
+        const total = Number(data.total || 0);
+        const feito = Number(data.feito || 0);
+        const emAndamento = Boolean(data.em_andamento);
+        const erro = data.erro || '';
+        const arquivo = data.arquivo || '';
+        const percentual = total > 0 ? Math.min(100, Math.round((feito / total) * 100)) : (emAndamento ? 15 : 100);
+        barraEl.style.width = percentual + '%';
+
+        if (erro) {
+          statusEl.textContent = 'Erro na geração';
+          detalheEl.textContent = erro;
+          barraEl.style.width = '100%';
+          barraEl.style.background = 'linear-gradient(135deg, #b91c1c, #7f1d1d)';
+          return;
+        }
+
+        if (emAndamento) {
+          statusEl.textContent = 'Gerando... ' + (total > 0 ? feito + ' / ' + total : 'processando');
+          detalheEl.textContent = 'O arquivo ainda está sendo montado.';
+          return;
+        }
+
+        statusEl.textContent = 'Relatório pronto';
+        detalheEl.textContent = arquivo ? 'Clique para baixar o arquivo gerado.' : 'A geração foi concluída.';
+        barraEl.style.width = '100%';
+        if (arquivo && !downloadIniciado) {
+          downloadIniciado = true;
+          if (intervaloId) {
+            clearInterval(intervaloId);
+          }
+          window.location.href = '{{ url_for("download", nome_arquivo="__ARQUIVO__") }}'.replace('__ARQUIVO__', encodeURIComponent(arquivo));
+        }
+      } catch (error) {
+        detalheEl.textContent = 'Não foi possível consultar o progresso agora.';
+      }
+    }
+
+    atualizar();
+    intervaloId = setInterval(atualizar, 1500);
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,195 @@
+/* ============================================================================
+   Button Component Styles
+   BEM Pattern: .btn, .btn--primary, .btn--secondary, .btn--danger, .btn--subtle
+   ============================================================================ */
+
+/* ============================================================================
+   BASE BUTTON COMPONENT
+   .btn - Default styling for all button variants
+   ============================================================================ */
+
+.btn {
+  /* Layout */
+  display: inline-block;
+  
+  /* Typography */
+  font-family: var(--font-sans);
+  font-size: var(--text-base); /* 14px */
+  font-weight: var(--font-medium); /* 500 */
+  line-height: 1.57;
+  text-decoration: none;
+
+  /* Spacing */
+  padding: 10px 16px;
+
+  /* Styling */
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+
+  /* Interactive */
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+
+  /* Accessibility */
+  outline-offset: 2px;
+}
+
+/* Button hover state */
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Button active state */
+.btn:active {
+  transform: translateY(0) scale(0.985);
+}
+
+/* Button focus state - keyboard navigation */
+.btn:focus-visible {
+  outline: 2px solid var(--grb-blue-dark);
+  outline-offset: 2px;
+}
+
+/* Button disabled state */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ============================================================================
+   PRIMARY BUTTON VARIANT
+   .btn--primary - Main CTAs with GRB blue background and white text
+   ============================================================================ */
+
+.btn--primary {
+  background: linear-gradient(135deg, var(--grb-blue-medium), var(--grb-blue-dark));
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 14px 24px rgba(0, 82, 163, 0.24);
+}
+
+.btn--primary:hover {
+  box-shadow: 0 18px 30px rgba(0, 82, 163, 0.34);
+  filter: saturate(1.05);
+}
+
+.btn--primary:active {
+  filter: saturate(0.98);
+}
+
+.btn--primary:focus-visible {
+  outline: 2px solid var(--grb-blue-dark);
+  outline-offset: 2px;
+}
+
+.btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   SECONDARY BUTTON VARIANT
+   .btn--secondary - Outline style with muted border and primary text color
+   ============================================================================ */
+
+.btn--secondary {
+  background-color: rgba(26, 32, 44, 0.84);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-muted, var(--color-border));
+  box-shadow: none;
+}
+
+.btn--secondary:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(45, 55, 72, 0.96);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--secondary:active {
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-text-primary);
+}
+
+.btn--secondary:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+.btn--secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   DANGER BUTTON VARIANT
+   .btn--danger - Destructive actions with red text and red border
+   ============================================================================ */
+
+.btn--danger {
+  background: linear-gradient(135deg, #ea6f67, #b91c1c);
+  color: white;
+  border: 1px solid var(--color-error);
+  box-shadow: 0 14px 24px rgba(185, 28, 28, 0.18);
+}
+
+.btn--danger:hover {
+  box-shadow: 0 18px 30px rgba(185, 28, 28, 0.24);
+  filter: saturate(1.05);
+}
+
+.btn--danger:active {
+  filter: saturate(0.98);
+}
+
+.btn--danger:focus-visible {
+  outline: 2px solid var(--color-error);
+  outline-offset: 2px;
+}
+
+.btn--danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   SUBTLE BUTTON VARIANT
+   .btn--subtle - Transparent with no border for minimal/subtle actions
+   ============================================================================ */
+
+.btn--subtle {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border: none;
+  box-shadow: none;
+}
+
+.btn--subtle:hover {
+  background-color: rgba(45, 55, 72, 0.96);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--subtle:active {
+  background-color: var(--color-bg-tertiary);
+}
+
+.btn--subtle:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+.btn--subtle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   END OF BUTTON COMPONENT
+   ============================================================================ */

@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Resumo • {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="cartao dashboard-capa">
+  <div class="dashboard-capa-texto page-title">
+    <span class="chip">{% if configurado %}Sistema pronto{% else %}Aguardando configuração{% endif %}</span>
+    <h1>Gestão de ponto com visão operacional e acesso rápido aos relatórios</h1>
+    <p class="subtitulo">
+      Acompanhe funcionários, turnos, conferência e auditoria em um único painel. A interface foi
+      reorganizada para facilitar o uso diário e reduzir a navegação perdida.
+    </p>
+    <div class="actions-row">
+      <a class="botao botao-principal" href="{{ url_for('dashboard') }}">Abrir dashboard</a>
+      <a class="botao botao-secundario" href="{{ url_for('conferencia') }}">Conferir marcações</a>
+      <a class="botao botao-secundario" href="{{ url_for('relatorios') }}">Gerar relatórios</a>
+      <a class="botao botao-terciario" href="{{ url_for('funcionarios') }}">Gerenciar funcionários</a>
+    </div>
+  </div>
+
+  <div class="section-stack">
+    <div class="hero-spotlight">
+      <strong>{{ configuracao.company_name or 'Empresa' }}</strong>
+      <p>{% if configurado %}Leitor configurado e pronto para operar.{% else %}Configure IP e senha para liberar a operação.{% endif %}</p>
+    </div>
+    <div class="hero-grid">
+      <div class="mini-card">
+        <span class="chip">Hoje</span>
+        <strong>{{ hoje_br }}</strong>
+      </div>
+      <div class="mini-card">
+        <span class="chip">CSV local</span>
+        <strong>{% if historico_csv_disponivel %}Disponível{% else %}Não gerado{% endif %}</strong>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dashboard-grid">
+  <div class="dashboard-card">
+    <span>Funcionários</span>
+    <strong>{{ dashboard.total_funcionarios }}</strong>
+  </div>
+  <div class="dashboard-card">
+    <span>Presentes hoje</span>
+    <strong>{{ dashboard.presentes }}</strong>
+  </div>
+  <div class="dashboard-card">
+    <span>Movimentos</span>
+    <strong>{{ dashboard.movimentos }}</strong>
+  </div>
+  <div class="dashboard-card">
+    <span>Ausentes</span>
+    <strong>{{ dashboard.ausentes }}</strong>
+  </div>
+</section>
+
+<section class="section-grid">
+  <div class="cartao">
+    <div class="section-head">
+      <div>
+        <h2>Relatórios recentes</h2>
+        <p class="subtitulo">Arquivos gerados localmente e prontos para download.</p>
+      </div>
+      {% if historico_csv_disponivel %}
+        <a class="botao botao-secundario" href="{{ url_for('download_historico') }}">Baixar histórico CSV</a>
+      {% else %}
+        <span class="dashboard-live-badge">Histórico CSV ainda não gerado</span>
+      {% endif %}
+    </div>
+
+    {% if relatorios %}
+      <div class="table-wrap">
+        <table class="tabela-relatorios">
+          <thead>
+            <tr>
+              <th>Arquivo</th>
+              <th>Formato</th>
+              <th>Gerado em</th>
+              <th>Tamanho</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in relatorios %}
+              <tr>
+                <td class="celula-arquivo">{{ item.nome }} <span class="tag-formato">{{ item.formato }}</span></td>
+                <td>{{ item.formato }}</td>
+                <td>{{ item.gerado_em }}</td>
+                <td>{{ item.tamanho_kb }} KB</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="vazio">Nenhum relatório foi gerado ainda.</p>
+    {% endif %}
+  </div>
+
+  <div class="cartao">
+    <div class="section-head">
+      <div>
+        <h2>Atividade recente</h2>
+        <p class="subtitulo">Últimos registros armazenados localmente neste computador.</p>
+      </div>
+      <a class="botao botao-terciario" href="{{ url_for('dashboard') }}">Ver ao vivo</a>
+    </div>
+
+    {% if historico_local %}
+      <div class="list-stack">
+        {% for item in historico_local[:8] %}
+          <article class="record-item">
+            <div class="record-meta">
+              <span class="action-pill">{{ item.acao or 'Registro' }}</span>
+              <strong>{{ item.name or item.enrollid }}</strong>
+              <p>{{ fmt_data(item.data or hoje_iso) or hoje_br }} • {{ fmt_hora(item.hora or item.time or '--:--:--') }}</p>
+              <small>{{ item.department or 'Sem departamento' }} • {{ item.shift_name or 'Sem turno' }}</small>
+            </div>
+            <div class="record-meta" style="text-align:right;">
+              <strong>{{ item.enrollid or '-' }}</strong>
+              <small>{{ item.source or 'local' }}</small>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">Ainda não há marcações locais para mostrar.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

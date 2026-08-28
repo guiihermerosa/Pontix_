@@ -1,0 +1,733 @@
+/* ============================================================================
+   CSS Reset & Base Styling
+   Provides foundation styling for all HTML elements
+   Imports design tokens and applies normalized, accessible base styles
+   ============================================================================ */
+
+@import url('./_variables.css');
+
+/* ============================================================================
+   RESET & NORMALIZATION
+   Remove default margins, padding, and standardize box-sizing
+   ============================================================================ */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  /* Font smoothing for better rendering on macOS and Windows */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Ensure consistent font size rendering */
+  font-size: 16px;
+}
+
+/* ============================================================================
+   BODY STYLING
+   Main page background and text color
+   ============================================================================ */
+
+body {
+  /* Typography */
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: var(--font-regular);
+  line-height: var(--text-base-line-height);
+  letter-spacing: var(--letter-normal);
+
+  /* Colors */
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+
+  /* Ensure text rendering consistency */
+  text-rendering: optimizeLegibility;
+  /* Remove text-indent for accessibility */
+  text-indent: 0;
+}
+
+/* ============================================================================
+   HEADINGS (h1 - h6)
+   Semantic heading hierarchy with consistent sizing from type scale
+   ============================================================================ */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  /* Reset margins - let component classes handle spacing */
+  margin: 0;
+  padding: 0;
+  /* All headings use semibold weight for emphasis */
+  font-weight: var(--font-semibold);
+  /* Prevent margin collapse */
+  margin-block-start: 0;
+  margin-block-end: 0;
+  /* Ensure proper line-height for readability */
+  line-height: 1.2;
+}
+
+/* H1 - 24px / 36px - Hero/Page titles */
+h1 {
+  font-size: var(--text-3xl);
+  line-height: var(--text-3xl-line-height);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+}
+
+/* H2 - 21px / 32px - Section titles */
+h2 {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl-line-height);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+/* H3 - 18px / 28px - Subsection titles */
+h3 {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl-line-height);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+/* H4 - 16px / 24px - Card titles, component headers */
+h4 {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg-line-height);
+  font-weight: var(--font-medium);
+  color: var(--color-text-muted);
+}
+
+/* H5 - 14px - Rarely used, defaults to body size */
+h5 {
+  font-size: var(--text-base);
+  line-height: var(--text-base-line-height);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+/* H6 - 13px - Smallest heading, for minor emphasis */
+h6 {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-line-height);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-muted);
+}
+
+/* ============================================================================
+   PARAGRAPH & TEXT ELEMENTS
+   Proper spacing and styling for text content
+   ============================================================================ */
+
+p {
+  margin: 0;
+  padding: 0;
+  line-height: var(--text-base-line-height);
+  color: var(--color-text-primary);
+}
+
+/* Spacing between paragraphs when used in prose/articles */
+p + p {
+  margin-top: var(--space-4);
+}
+
+/* Small text - typically used for captions, footnotes */
+small,
+.text-small {
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-line-height);
+  color: var(--color-text-muted);
+}
+
+/* Strong/Bold text - maintains hierarchy */
+strong,
+b {
+  font-weight: var(--font-semibold);
+  color: inherit;
+}
+
+/* Emphasized text */
+em,
+i {
+  font-style: italic;
+  color: inherit;
+}
+
+/* ============================================================================
+   LINKS
+   Styled with brand colors and clear interaction states
+   ============================================================================ */
+
+a {
+  /* Use GRB blue for links */
+  color: var(--grb-blue-medium);
+  text-decoration: none;
+  font-weight: var(--font-medium);
+  transition: color var(--transition-fast), text-decoration var(--transition-fast);
+  /* Ensure links have enough space for touch targets */
+  display: inline;
+  cursor: pointer;
+}
+
+/* Hover state - add underline for clarity */
+a:hover {
+  color: var(--grb-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* Active/Visited state */
+a:active {
+  color: var(--grb-blue-dark);
+}
+
+/* Focus state - visible outline for accessibility */
+a:focus-visible {
+  outline: 2px solid var(--grb-blue-medium);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* Disabled link state */
+a:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  text-decoration: none;
+  opacity: 0.5;
+}
+
+/* ============================================================================
+   LISTS
+   Proper spacing and styling for ordered and unordered lists
+   ============================================================================ */
+
+ul,
+ol {
+  /* Reset default list styling */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  margin: 0;
+  padding: 0;
+}
+
+/* Restore list markers when needed - use .list class */
+.list {
+  list-style: revert;
+  padding-left: var(--space-6);
+}
+
+.list li {
+  margin-bottom: var(--space-2);
+}
+
+.list li + li {
+  margin-top: var(--space-2);
+}
+
+/* Nested list spacing */
+.list ul,
+.list ol {
+  list-style: revert;
+  margin-top: var(--space-2);
+  padding-left: var(--space-6);
+}
+
+/* Description lists */
+dl {
+  margin: 0;
+  padding: 0;
+}
+
+dt {
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-1);
+}
+
+dd {
+  color: var(--color-text-muted);
+  margin-left: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+
+/* ============================================================================
+   FORM ELEMENTS - GENERAL
+   Inherit fonts and colors from design system
+   ============================================================================ */
+
+input,
+select,
+textarea,
+button,
+optgroup,
+option {
+  /* Inherit font from body */
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+/* ============================================================================
+   INPUT & TEXTAREA ELEMENTS
+   Text inputs, textareas, and select dropdowns
+   ============================================================================ */
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"],
+textarea,
+select {
+  /* Styling */
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-base);
+  line-height: var(--text-base-line-height);
+
+  /* Typography */
+  font-family: inherit;
+  color: var(--color-text-primary);
+
+  /* Transitions for smooth interaction */
+  transition: border-color var(--transition-fast),
+              background-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+
+  /* Remove appearance to ensure consistent styling across browsers */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Focus state - highlight with GRB blue and shadow */
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="url"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="datetime-local"]:focus,
+input[type="month"]:focus,
+input[type="week"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--grb-blue-medium);
+  background-color: var(--color-bg-secondary);
+  box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.1);
+}
+
+/* Focus-visible for keyboard navigation - explicit visible focus */
+input[type="text"]:focus-visible,
+input[type="email"]:focus-visible,
+input[type="password"]:focus-visible,
+input[type="search"]:focus-visible,
+input[type="url"]:focus-visible,
+input[type="tel"]:focus-visible,
+input[type="number"]:focus-visible,
+input[type="date"]:focus-visible,
+input[type="time"]:focus-visible,
+input[type="datetime-local"]:focus-visible,
+input[type="month"]:focus-visible,
+input[type="week"]:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--grb-blue-medium);
+  outline-offset: 2px;
+}
+
+/* Placeholder styling - muted color */
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+/* Disabled state - reduced opacity and not-allowed cursor */
+input:disabled,
+textarea:disabled,
+select:disabled {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.5;
+  border-color: var(--color-border);
+}
+
+/* Invalid/Error state - red border */
+input:invalid,
+textarea:invalid,
+select:invalid {
+  border-color: var(--color-error);
+}
+
+/* Readonly state - prevent editing appearance */
+input:read-only,
+textarea:read-only {
+  background-color: var(--color-bg-tertiary);
+  cursor: default;
+}
+
+/* Checkbox and Radio - custom styling via wrapper classes */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--grb-blue-medium);
+}
+
+/* File input */
+input[type="file"] {
+  cursor: pointer;
+}
+
+/* Select element - custom arrow via pseudo-element */
+select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right var(--space-2) center;
+  background-size: 20px;
+  padding-right: var(--space-8);
+}
+
+select:disabled {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23757575' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+/* Textarea specific - allow resize */
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* ============================================================================
+   BUTTON ELEMENT
+   Remove default styling to allow component styles to apply
+   ============================================================================ */
+
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  /* Remove default button styling */
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+
+  /* Enable proper text rendering */
+  font-weight: var(--font-medium);
+  text-align: center;
+
+  /* Cursor indicates clickable */
+  cursor: pointer;
+  user-select: none;
+
+  /* Ensure buttons don't have outline by default - will be added via focus styles */
+  outline: none;
+
+  /* Mobile touch target minimum: 44x44px */
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Remove button default appearance */
+button::-moz-focus-inner {
+  border: 0;
+  padding: 0;
+}
+
+/* Disabled button state */
+button:disabled,
+input[type="button"]:disabled,
+input[type="submit"]:disabled,
+input[type="reset"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Focus state for buttons - visible outline */
+button:focus-visible,
+input[type="button"]:focus-visible,
+input[type="submit"]:focus-visible,
+input[type="reset"]:focus-visible {
+  outline: 2px solid var(--grb-blue-medium);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   CODE & PREFORMATTED TEXT
+   Monospace font for code display
+   ============================================================================ */
+
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+pre {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  overflow-x: auto;
+  margin: var(--space-4) 0;
+}
+
+code {
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-xs);
+  padding: var(--space-1) var(--space-2);
+  color: var(--grb-accent);
+}
+
+pre code {
+  background-color: transparent;
+  border-radius: 0;
+  padding: 0;
+  color: inherit;
+}
+
+kbd {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  padding: var(--space-1) var(--space-2);
+  display: inline-block;
+}
+
+/* ============================================================================
+   IMAGES
+   Responsive and accessible image styling
+   ============================================================================ */
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  /* Prevent image distortion */
+  object-fit: cover;
+}
+
+/* Prevent images from exceeding their container */
+img[width],
+img[height] {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ============================================================================
+   MEDIA ELEMENTS
+   Audio and video players
+   ============================================================================ */
+
+audio,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ============================================================================
+   HORIZONTAL RULE
+   Visual separator with consistent styling
+   ============================================================================ */
+
+hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-6) 0;
+  height: 0;
+  overflow: visible;
+}
+
+/* ============================================================================
+   BLOCKQUOTE
+   Styled quotations
+   ============================================================================ */
+
+blockquote {
+  margin: var(--space-4) 0;
+  padding-left: var(--space-4);
+  border-left: 3px solid var(--grb-blue-medium);
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+/* ============================================================================
+   ABBREVIATION
+   Styled abbreviations with tooltips
+   ============================================================================ */
+
+abbr[title] {
+  text-decoration: underline dotted;
+  cursor: help;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+/* ============================================================================
+   SUBSCRIPT & SUPERSCRIPT
+   Proper sizing for sub/superscript text
+   ============================================================================ */
+
+sub,
+sup {
+  font-size: 0.8em;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sup {
+  top: -0.5em;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+/* ============================================================================
+   TABLE ELEMENTS
+   Base table styling (detailed styling in _components/tables.css)
+   ============================================================================ */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin: var(--space-6) 0;
+}
+
+thead {
+  background-color: var(--color-bg-secondary);
+}
+
+th {
+  text-align: left;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ============================================================================
+   UTILITY CLASSES - BASE ACCESSIBILITY
+   Focus management and visibility utilities
+   ============================================================================ */
+
+/* Skip to main content link - for keyboard navigation */
+.skip-to-main {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--grb-blue-dark);
+  color: white;
+  padding: var(--space-2) var(--space-4);
+  z-index: 100;
+  text-decoration: none;
+  border-radius: var(--radius-base);
+}
+
+.skip-to-main:focus {
+  top: 0;
+}
+
+/* Visually hidden but accessible to screen readers */
+.sr-only,
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus outline utility - ensures visible focus on all interactive elements */
+:focus-visible {
+  outline: 2px solid var(--grb-blue-medium);
+  outline-offset: 2px;
+}
+
+/* Remove focus outline for mouse users (with JS support) */
+body.using-mouse *:focus-visible {
+  outline: none;
+}
+
+/* ============================================================================
+   REDUCED MOTION ACCESSIBILITY
+   Respect user's motion preferences for animations/transitions
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================================
+   DARK MODE ADJUSTMENTS (if needed in future)
+   Currently, design system uses dark theme by default
+   ============================================================================ */
+
+@media (prefers-color-scheme: light) {
+  /* Light mode adjustments would go here if needed */
+  /* For now, we maintain dark theme as primary */
+}
+
+/* ============================================================================
+   END OF BASE STYLING
+   All base elements are now normalized and ready for component styles
+   ============================================================================ */

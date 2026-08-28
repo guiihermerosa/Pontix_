@@ -1,0 +1,145 @@
+/* ============================================================================
+   Design Tokens - CSS Custom Properties
+   GRB UI Design System
+   ============================================================================ */
+
+:root {
+  /* ========================================================================
+     COLOR PALETTE
+     ======================================================================== */
+
+  /* Primary Brand Colors (GRB) */
+  --grb-blue-dark: #003d82;       /* Azul GRB corporativo - primário */
+  --grb-blue-medium: #0052a3;     /* Azul GRB secundário */
+  --grb-blue-light: #e8f1f8;      /* Azul claro - backgrounds */
+  --grb-accent: #ff6b35;          /* Laranja corporativo - destaque */
+  --grb-accent-light: #ffe5d9;    /* Laranja claro */
+
+  /* Semantic Colors */
+  --color-success: #2e7d32;       /* Verde para sucesso */
+  --color-warning: #f57c00;       /* Laranja para alerta */
+  --color-error: #c62828;         /* Vermelho para erro */
+  --color-info: #0052a3;          /* Azul para informação */
+
+  /* Neutral Scale (Dark Mode) */
+  --color-bg-primary: #0f1419;    /* Background principal - quase preto */
+  --color-bg-secondary: #1a202c;  /* Background secundário - painel */
+  --color-bg-tertiary: #2d3748;   /* Background terciário - raised */
+  --color-border: #4a5568;        /* Linhas e divisores */
+  --color-text-primary: #e2e8f0;  /* Texto principal */
+  --color-text-muted: #a0aec0;    /* Texto secundário */
+
+  /* ========================================================================
+     TYPOGRAPHY - FONT FAMILIES
+     ======================================================================== */
+
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+
+  /* ========================================================================
+     TYPOGRAPHY - FONT WEIGHTS
+     ======================================================================== */
+
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* ========================================================================
+     TYPOGRAPHY - TYPE SCALE
+     Base: 14px (0.875rem)
+     ======================================================================== */
+
+  /* Extra small - 12px / 16px line-height */
+  --text-xs: 12px;
+  --text-xs-line-height: 1;
+  --text-xs-weight: var(--font-regular);
+
+  /* Small - 13px / 20px line-height */
+  --text-sm: 13px;
+  --text-sm-line-height: 1.25;
+  --text-sm-weight: var(--font-regular);
+
+  /* Base - 14px / 22px line-height */
+  --text-base: 14px;
+  --text-base-line-height: 1.57;
+  --text-base-weight: var(--font-regular);
+
+  /* Large - 16px / 24px line-height */
+  --text-lg: 16px;
+  --text-lg-line-height: 1.5;
+  --text-lg-weight: var(--font-regular);
+
+  /* Extra large - 18px / 28px line-height */
+  --text-xl: 18px;
+  --text-xl-line-height: 1.56;
+  --text-xl-weight: var(--font-semibold);
+
+  /* 2XL - 21px / 32px line-height */
+  --text-2xl: 21px;
+  --text-2xl-line-height: 1.52;
+  --text-2xl-weight: var(--font-semibold);
+
+  /* 3XL - 24px / 36px line-height */
+  --text-3xl: 24px;
+  --text-3xl-line-height: 1.5;
+  --text-3xl-weight: var(--font-bold);
+
+  /* ========================================================================
+     TYPOGRAPHY - LETTER SPACING (for monospace)
+     ======================================================================== */
+
+  --letter-normal: 0px;
+  --letter-tight: -0.02em;
+  --letter-wide: 0.05em;
+  --letter-wide-2: 0.1em;
+
+  /* ========================================================================
+     SPACING SCALE
+     Base: 8px
+     ======================================================================== */
+
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ========================================================================
+     BORDER RADIUS
+     ======================================================================== */
+
+  --radius-xs: 2px;       /* Minimal roundness */
+  --radius-sm: 4px;       /* Small components */
+  --radius-base: 8px;     /* Default for buttons, inputs */
+  --radius-lg: 12px;      /* Cards, larger components */
+  --radius-xl: 16px;      /* Modals, prominent containers */
+  --radius-full: 9999px;  /* Pills, circular elements */
+
+  /* ========================================================================
+     SHADOWS
+     Used for elevation and depth - small for subtle accents, large for modals
+     ======================================================================== */
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);      /* Subtle elevation - hover states, small components */
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);    /* Default shadow - buttons, input fields */
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2);   /* Prominent elevation - dropdowns, tooltips */
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.25);  /* High elevation - modals, overlays */
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.3);  /* Maximum elevation - stacked modals, full-screen overlays */
+
+  /* ========================================================================
+     TRANSITIONS & ANIMATIONS
+     Timing for interactive elements - faster for UI interactions, slower for attention
+     ======================================================================== */
+
+  --transition-fast: 150ms ease;              /* Quick feedback - button presses, hover states */
+  --transition-base: 200ms ease;              /* Standard transitions - property changes, fade effects */
+  --transition-slow: 300ms ease;              /* Smooth attention - modals opening, important state changes */
+  --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);  /* Standard easing curve for all transitions */
+}

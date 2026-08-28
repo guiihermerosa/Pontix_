@@ -1,8 +1,11 @@
 {
-  "device_ip": "192.168.0.15",
+  "device_ip": "192.168.0.26",
   "device_port": 80,
   "device_password": "2319",
-  "company_name": "Sup Mercado Santa Clara",
+  "company_name": "teste",
+  "company_document": "",
+  "workplace_address": "",
+  "rep_identifier": "",
   "vendor_name": "GRB Tecnologia",
   "logo_path": "",
   "output_dir": "relatorios",
@@ -117,7 +120,7 @@
   "coleta_retrospectiva_dias": 7,
   "regras_ponto": {
     "banco_horas": {
-      "ativo": true,
+      "ativo": false,
       "limite_minutos": 0,
       "validade_dias": 30,
       "compensacao_minutos": 0

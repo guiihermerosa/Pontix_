@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Button Test - Professionalize GRB UI</title>
+  <link rel="stylesheet" href="static/css/_variables.css">
+  <link rel="stylesheet" href="static/css/_components.css">
+  <style>
+    body {
+      background-color: var(--color-bg-primary);
+      color: var(--color-text-primary);
+      padding: 40px;
+      font-family: var(--font-sans);
+    }
+    .test-section {
+      margin-bottom: 40px;
+      padding: 20px;
+      background-color: var(--color-bg-secondary);
+      border-radius: 8px;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: var(--grb-blue-medium);
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .button-info {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Button Component Test Suite</h1>
+  
+  <!-- TASK 1: Small Size Modifier -->
+  <div class="test-section">
+    <h2>✅ TASK 1: .btn--sm (12px, 6px 12px padding)</h2>
+    <div class="button-group">
+      <button class="btn btn--sm btn--primary">Primary Small</button>
+      <button class="btn btn--sm btn--secondary">Secondary Small</button>
+      <button class="btn btn--sm btn--danger">Danger Small</button>
+      <button class="btn btn--sm btn--subtle">Subtle Small</button>
+    </div>
+    <div class="button-info">Font: 12px | Padding: 6px 12px | Works with all variants</div>
+  </div>
+
+  <!-- TASK 2: Large Size Modifier -->
+  <div class="test-section">
+    <h2>✅ TASK 2: .btn--lg (16px, 12px 20px padding)</h2>
+    <div class="button-group">
+      <button class="btn btn--lg btn--primary">Primary Large</button>
+      <button class="btn btn--lg btn--secondary">Secondary Large</button>
+      <button class="btn btn--lg btn--danger">Danger Large</button>
+      <button class="btn btn--lg btn--subtle">Subtle Large</button>
+    </div>
+    <div class="button-info">Font: 16px | Padding: 12px 20px | Works with all variants</div>
+  </div>
+
+  <!-- TASK 3: Hover States -->
+  <div class="test-section">
+    <h2>✅ TASK 3: Hover States (scale 1.05, shadow-md, color shift)</h2>
+    <div class="button-group">
+      <button class="btn btn--primary">Primary (Hover me)</button>
+      <button class="btn btn--secondary">Secondary (Hover me)</button>
+      <button class="btn btn--danger">Danger (Hover me)</button>
+      <button class="btn btn--subtle">Subtle (Hover me)</button>
+    </div>
+    <div class="button-info">Try hovering: Scale 1.05 + shadow-md + darker colors applied</div>
+  </div>
+
+  <!-- TASK 4: Active States -->
+  <div class="test-section">
+    <h2>✅ TASK 4: Active States (scale 0.95, pressed appearance)</h2>
+    <div class="button-group">
+      <button class="btn btn--primary">Primary (Click me)</button>
+      <button class="btn btn--secondary">Secondary (Click me)</button>
+      <button class="btn btn--danger">Danger (Click me)</button>
+      <button class="btn btn--subtle">Subtle (Click me)</button>
+    </div>
+    <div class="button-info">Try clicking and holding: Scale 0.95 for pressed effect</div>
+  </div>
+
+  <!-- TASK 5: Focus States -->
+  <div class="test-section">
+    <h2>✅ TASK 5: Focus States (2px outline, 2px offset)</h2>
+    <div class="button-group">
+      <button class="btn btn--primary">Primary (Tab to focus)</button>
+      <button class="btn btn--secondary">Secondary (Tab to focus)</button>
+      <button class="btn btn--danger">Danger (Tab to focus)</button>
+      <button class="btn btn--subtle">Subtle (Tab to focus)</button>
+    </div>
+    <div class="button-info">Tab through buttons: 2px outline with 2px offset, visible for keyboard users</div>
+  </div>
+
+  <!-- Combined: Size + Variant -->
+  <div class="test-section">
+    <h2>✅ ACCEPTANCE CRITERIA: Combinable Classes</h2>
+    <div class="button-group">
+      <button class="btn btn--sm btn--primary">SM Primary</button>
+      <button class="btn btn--primary">MD Primary</button>
+      <button class="btn btn--lg btn--primary">LG Primary</button>
+      <br />
+      <button class="btn btn--sm btn--danger">SM Danger</button>
+      <button class="btn btn--danger">MD Danger</button>
+      <button class="btn btn--lg btn--danger">LG Danger</button>
+    </div>
+    <div class="button-info">All sizes work with all variants (primary, secondary, danger, subtle)</div>
+  </div>
+
+  <!-- Disabled States -->
+  <div class="test-section">
+    <h2>ℹ️ Disabled States (opacity 50%)</h2>
+    <div class="button-group">
+      <button class="btn btn--sm btn--primary" disabled>Disabled Small</button>
+      <button class="btn btn--primary" disabled>Disabled Medium</button>
+      <button class="btn btn--lg btn--primary" disabled>Disabled Large</button>
+    </div>
+    <div class="button-info">Disabled buttons show 50% opacity and no hover/active effects</div>
+  </div>
+</body>
+</html>

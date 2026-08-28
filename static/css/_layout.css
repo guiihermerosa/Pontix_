@@ -1,0 +1,556 @@
+/* ============================================================================
+   Layout Patterns & Container System
+   Grid, flexbox, and responsive layout utilities
+   ============================================================================ */
+
+@import url('./_variables.css');
+
+/* ============================================================================
+   BREAKPOINTS
+   Mobile-first responsive design strategy
+   ============================================================================ */
+
+/* Mobile: 0px - 640px (default, no media query needed) */
+/* Tablet: 641px - 1024px (md: breakpoint) */
+/* Desktop: 1025px+ (lg: breakpoint) */
+
+/* ============================================================================
+   PAGE CONTAINER
+   Main container for page content with max-width constraint
+   ============================================================================ */
+
+.page-container {
+  /* Max width constraint */
+  max-width: 1280px;
+  width: 100%;
+
+  /* Center horizontally */
+  margin-left: auto;
+  margin-right: auto;
+
+  /* Padding for content safety */
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+
+  /* Mobile-first: smaller padding on mobile */
+}
+
+/* Tablet: increase padding */
+@media (min-width: 641px) {
+  .page-container {
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+}
+
+/* Desktop: comfortable padding */
+@media (min-width: 1025px) {
+  .page-container {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+
+@media (min-width: 1280px) {
+  .page-container {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+}
+
+@media (max-width: 320px) {
+  .page-container {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
+}
+
+/* ============================================================================
+   PAGE SECTIONS
+   Sections with padding and gap utilities for spacing
+   ============================================================================ */
+
+.page-section {
+  /* Vertical padding for spacing */
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-8);
+
+  /* Gap for internal spacing */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* Mobile: reduce padding on small screens */
+@media (max-width: 640px) {
+  .page-section {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-6);
+    gap: var(--space-4);
+  }
+}
+
+/* Section variants for different spacing */
+.page-section--compact {
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-4);
+  gap: var(--space-3);
+}
+
+.page-section--spacious {
+  padding-top: var(--space-12);
+  padding-bottom: var(--space-12);
+  gap: var(--space-8);
+}
+
+/* ============================================================================
+   GRID UTILITIES
+   Responsive grid layouts with auto-fit capability
+   ============================================================================ */
+
+/* Responsive auto-fit grid */
+.grid {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/* Mobile: single column */
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop: 3+ columns with auto-fit */
+@media (min-width: 1025px) {
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+/* Fixed 2-column grid */
+.grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-6);
+}
+
+/* Mobile: stack 2-col to 1 column */
+@media (max-width: 640px) {
+  .grid-2col {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
+/* Fixed 3-column grid */
+.grid-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+/* Mobile: stack 3-col to 1 column */
+@media (max-width: 640px) {
+  .grid-3col {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
+/* Tablet: 3-col becomes 2-col */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid-3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================================================
+   FLEXBOX UTILITIES
+   Flex layout helpers for common patterns
+   ============================================================================ */
+
+/* Base flex container */
+.flex {
+  display: flex;
+}
+
+/* Center items horizontally and vertically */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Space between items - common pattern */
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Evenly distributed items */
+.flex-around {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+/* Allow wrapping */
+.flex-wrap {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* Prevent wrapping */
+.flex-nowrap {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+/* Column direction (vertical stack) */
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Row direction (horizontal - default) */
+.flex-row {
+  display: flex;
+  flex-direction: row;
+}
+
+/* Reverse direction */
+.flex-col-reverse {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.flex-row-reverse {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+/* Align items to start */
+.flex-start {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Align items to end */
+.flex-end {
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Justify content at start */
+.justify-start {
+  justify-content: flex-start;
+}
+
+/* Justify content at end */
+.justify-end {
+  justify-content: flex-end;
+}
+
+/* Justify content centered */
+.justify-center {
+  justify-content: center;
+}
+
+/* Justify content with gap */
+.justify-between {
+  justify-content: space-between;
+}
+
+/* Flex grow - fill available space */
+.flex-1 {
+  flex: 1 1 0%;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+/* Flex basis - minimum space */
+.flex-auto {
+  flex: auto;
+}
+
+/* ============================================================================
+   GAP UTILITIES
+   Spacing between flex and grid items
+   ============================================================================ */
+
+.gap-0 {
+  gap: var(--space-0);
+}
+
+.gap-1 {
+  gap: var(--space-1);
+}
+
+.gap-2 {
+  gap: var(--space-2);
+}
+
+.gap-3 {
+  gap: var(--space-3);
+}
+
+.gap-4 {
+  gap: var(--space-4);
+}
+
+.gap-5 {
+  gap: var(--space-5);
+}
+
+.gap-6 {
+  gap: var(--space-6);
+}
+
+.gap-8 {
+  gap: var(--space-8);
+}
+
+.gap-10 {
+  gap: var(--space-10);
+}
+
+.gap-12 {
+  gap: var(--space-12);
+}
+
+/* ============================================================================
+   DISPLAY UTILITIES
+   Common display property values
+   ============================================================================ */
+
+.block {
+  display: block;
+}
+
+.inline-block {
+  display: inline-block;
+}
+
+.inline {
+  display: inline;
+}
+
+.hidden {
+  display: none;
+}
+
+.visible {
+  display: block;
+}
+
+/* Responsive visibility */
+@media (max-width: 640px) {
+  .sm\:hidden {
+    display: none;
+  }
+
+  .sm\:block {
+    display: block;
+  }
+
+  .sm\:inline-block {
+    display: inline-block;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .md\:hidden {
+    display: none;
+  }
+
+  .md\:block {
+    display: block;
+  }
+
+  .md\:inline-block {
+    display: inline-block;
+  }
+}
+
+@media (min-width: 1025px) {
+  .lg\:hidden {
+    display: none;
+  }
+
+  .lg\:block {
+    display: block;
+  }
+
+  .lg\:inline-block {
+    display: inline-block;
+  }
+}
+
+/* ============================================================================
+   WIDTH & HEIGHT UTILITIES
+   Size constraints
+   ============================================================================ */
+
+.w-full {
+  width: 100%;
+}
+
+.w-auto {
+  width: auto;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.h-auto {
+  height: auto;
+}
+
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.min-h-full {
+  min-height: 100%;
+}
+
+/* ============================================================================
+   POSITION UTILITIES
+   Positioning helpers
+   ============================================================================ */
+
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.fixed {
+  position: fixed;
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* ============================================================================
+   OVERFLOW UTILITIES
+   Handle content overflow
+   ============================================================================ */
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-auto {
+  overflow: auto;
+}
+
+.overflow-x-auto {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ============================================================================
+   RESPONSIVE BREAKPOINT HELPERS
+   Show/hide content based on screen size
+   ============================================================================ */
+
+/* Show only on mobile */
+.mobile-only {
+  display: block;
+}
+
+@media (min-width: 641px) {
+  .mobile-only {
+    display: none;
+  }
+}
+
+/* Show only on tablet and up */
+.tablet-up {
+  display: none;
+}
+
+@media (min-width: 641px) {
+  .tablet-up {
+    display: block;
+  }
+}
+
+/* Show only on desktop */
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 1025px) {
+  .desktop-only {
+    display: block;
+  }
+}
+
+/* ============================================================================
+   CONTAINER QUERIES
+   Responsive based on container size
+   ============================================================================ */
+
+@supports (container-type: inline-size) {
+  .container-responsive {
+    container-type: inline-size;
+  }
+
+  @container (max-width: 500px) {
+    .container-sm\:single-column {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  @container (min-width: 501px) {
+    .container-md\:two-column {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
+/* ============================================================================
+   END OF LAYOUT UTILITIES
+   ============================================================================ */

@@ -18,6 +18,9 @@ REQUEST_TIMEOUT_SECONDS = 15
 
 COR_TITULO = "1F4E78"
 COR_CABECALHO = "D9E1F2"
+COR_FAIXA = "F7FAFC"
+COR_FAIXA_ALT = "EEF3F8"
+COR_BORDA = "B7C2D0"
 
 FIN_THIN = Side(style="thin", color="B7B7B7")
 BORDA_PADRAO = Border(left=FIN_THIN, right=FIN_THIN, top=FIN_THIN, bottom=FIN_THIN)
@@ -1626,6 +1629,68 @@ def _formatar_observacoes(observacoes):
     return "; ".join(observacoes)
 
 
+def _normalizar_texto_busca(valor):
+    texto = unicodedata.normalize("NFKD", str(valor or "").strip())
+    texto = texto.encode("ascii", "ignore").decode("ascii")
+    return texto.lower()
+
+
+def _resolver_periodo_relatorio(inicio, fim, filtros=None):
+    filtros = filtros or {}
+    inicio_filtro = filtros.get("periodo_inicio")
+    fim_filtro = filtros.get("periodo_fim")
+
+    if inicio_filtro:
+        try:
+            inicio_filtro = datetime.strptime(str(inicio_filtro), "%Y-%m-%d").date()
+        except ValueError:
+            raise ValueError("Data inicial invalida. Use o formato YYYY-MM-DD.")
+        if inicio is None or inicio_filtro > inicio:
+            inicio = inicio_filtro
+
+    if fim_filtro:
+        try:
+            fim_filtro = datetime.strptime(str(fim_filtro), "%Y-%m-%d").date()
+        except ValueError:
+            raise ValueError("Data final invalida. Use o formato YYYY-MM-DD.")
+        if fim is None or fim_filtro < fim:
+            fim = fim_filtro
+
+    if inicio and fim and fim < inicio:
+        raise ValueError("A data final precisa ser depois da data inicial.")
+    return inicio, fim
+
+
+def filtrar_resultados_relatorio(resultados, filtros=None):
+    filtros = filtros or {}
+    matricula = str(filtros.get("matricula", "") or "").strip()
+    nome = _normalizar_texto_busca(filtros.get("nome", ""))
+    departamento = _normalizar_texto_busca(filtros.get("departamento", ""))
+    turno = _normalizar_texto_busca(filtros.get("turno", ""))
+    status = _normalizar_texto_busca(filtros.get("status", ""))
+
+    filtrados = []
+    for item in resultados or []:
+        matricula_item = str(item.get("enrollid", "") or "").strip()
+        nome_item = _normalizar_texto_busca(item.get("name", ""))
+        departamento_item = _normalizar_texto_busca(item.get("department", ""))
+        turno_item = _normalizar_texto_busca(item.get("shift_name", ""))
+        status_item = _normalizar_texto_busca(item.get("status", "") or item.get("situacao", ""))
+
+        if matricula and matricula_item != matricula:
+            continue
+        if nome and nome not in nome_item:
+            continue
+        if departamento and departamento not in departamento_item:
+            continue
+        if turno and turno not in turno_item:
+            continue
+        if status and status not in status_item:
+            continue
+        filtrados.append(item)
+    return filtrados
+
+
 def testar_conexao(config):
     """Usado pela tela de configuracoes pra validar IP/senha antes de salvar."""
     get_user_ids(config)
@@ -1839,6 +1904,53 @@ def escrever_linha_cabecalho_tabela(ws, linha, titulos):
         cel.border = BORDA_PADRAO
 
 
+def escrever_cabecalho_pagina(ws, titulo_relatorio, periodo_txt, n_colunas, company_name, logo_path, vendor_name="GRB Tecnologia"):
+    linha_titulo = 1
+    coluna_inicial = 1
+
+    if logo_path and os.path.isfile(logo_path):
+        try:
+            img = XLImage(logo_path)
+            max_altura = 60
+            if img.height > max_altura:
+                escala = max_altura / img.height
+                img.height = max_altura
+                img.width = int(img.width * escala)
+            ws.add_image(img, "A1")
+            coluna_inicial = 3
+            ws.row_dimensions[1].height = 46
+        except Exception:
+            pass
+
+    col_letra_ini = get_column_letter(coluna_inicial)
+    col_letra_fim = get_column_letter(max(n_colunas, coluna_inicial + 2))
+
+    ws.merge_cells("{}{}:{}{}".format(col_letra_ini, linha_titulo, col_letra_fim, linha_titulo))
+    cel = ws["{}{}".format(col_letra_ini, linha_titulo)]
+    cel.value = "{}{}".format(company_name, "  •  {}".format(vendor_name) if vendor_name else "")
+    cel.font = Font(size=14, bold=True, color=COR_TITULO)
+    cel.alignment = Alignment(horizontal="left", vertical="center")
+    ws.row_dimensions[linha_titulo].height = 22
+
+    linha_titulo += 1
+    ws.merge_cells("{}{}:{}{}".format(col_letra_ini, linha_titulo, col_letra_fim, linha_titulo))
+    cel = ws["{}{}".format(col_letra_ini, linha_titulo)]
+    cel.value = "{} — {}".format(titulo_relatorio, periodo_txt)
+    cel.font = Font(size=11, italic=True, color="4A5568")
+    cel.alignment = Alignment(horizontal="left", vertical="center")
+    ws.row_dimensions[linha_titulo].height = 20
+
+    linha_titulo += 1
+    ws.merge_cells("{}{}:{}{}".format(col_letra_ini, linha_titulo, col_letra_fim, linha_titulo))
+    cel = ws["{}{}".format(col_letra_ini, linha_titulo)]
+    cel.value = "Desenvolvido por {}".format(vendor_name) if vendor_name else ""
+    cel.font = Font(size=9, bold=True, color="7A8699")
+    cel.alignment = Alignment(horizontal="left", vertical="center")
+    ws.row_dimensions[linha_titulo].height = 18
+
+    return linha_titulo + 2
+
+
 def _salvar_csv(caminho, cabecalhos, linhas):
     _garantir_diretorio(os.path.dirname(caminho))
     with open(caminho, "w", newline="", encoding="utf-8-sig") as f:
@@ -2046,6 +2158,9 @@ def montar_aba_resumo(wb, resultados, periodo_txt, company_name, logo_path, nota
     linha = escrever_cabecalho_pagina(ws, "Relatorio de Ponto - Resumo", periodo_txt, len(colunas), company_name, logo_path)
     escrever_linha_cabecalho_tabela(ws, linha, colunas)
     linha += 1
+    linha_dados_inicio = linha
+    linha_cabecalho = linha_dados_inicio - 1
+    ultima_linha = linha - 1
 
     for r in resultados:
         valores = [
@@ -2059,20 +2174,33 @@ def montar_aba_resumo(wb, resultados, periodo_txt, company_name, logo_path, nota
         for col_i, valor in enumerate(valores, start=1):
             cel = ws.cell(row=linha, column=col_i, value=valor)
             cel.border = BORDA_PADRAO
-            cel.alignment = Alignment(horizontal="center")
+            cel.alignment = Alignment(horizontal="center", vertical="center")
+            cel.fill = PatternFill(
+                start_color=COR_FAIXA if (linha - linha_dados_inicio) % 2 == 0 else COR_FAIXA_ALT,
+                end_color=COR_FAIXA if (linha - linha_dados_inicio) % 2 == 0 else COR_FAIXA_ALT,
+                fill_type="solid",
+            )
             if col_i in (7, 9):
                 cel.value = _segundos_para_duracao_excel(cel.value)
                 _formatar_duracao_excel(cel)
         linha += 1
+        ultima_linha = linha - 1
 
     if not resultados and nota_vazio:
         ws.merge_cells(start_row=linha, start_column=1, end_row=linha, end_column=len(colunas))
         cel = ws.cell(row=linha, column=1, value=nota_vazio)
         cel.alignment = Alignment(horizontal="center")
         cel.font = Font(italic=True, color="666666")
+        ultima_linha = linha
 
     for col_i in range(1, len(colunas) + 1):
-        ws.column_dimensions[get_column_letter(col_i)].width = 15
+        ws.column_dimensions[get_column_letter(col_i)].width = [12, 24, 22, 14, 16, 14, 14, 16, 14, 16, 16, 14, 12][col_i - 1]
+
+    ws.freeze_panes = ws["A{}".format(max(2, linha_dados_inicio))]
+    if ultima_linha >= linha_dados_inicio:
+        ws.auto_filter.ref = "A{}:{}{}".format(linha_cabecalho, get_column_letter(len(colunas)), ultima_linha)
+    ws.sheet_view.showGridLines = False
+    ws.sheet_properties.tabColor = COR_TITULO
 
 
 def montar_aba_detalhado(wb, resultados, periodo_txt, company_name, logo_path, nota_vazio=None):
@@ -2097,6 +2225,7 @@ def montar_aba_detalhado(wb, resultados, periodo_txt, company_name, logo_path, n
 
         escrever_linha_cabecalho_tabela(ws, linha, colunas)
         linha += 1
+        linha_dados_inicio = linha
 
         for dia in r.get("days", []):
             horarios = list(dia.get("time", []))
@@ -2115,7 +2244,12 @@ def montar_aba_detalhado(wb, resultados, periodo_txt, company_name, logo_path, n
             for col_i, valor in enumerate(valores, start=1):
                 cel = ws.cell(row=linha, column=col_i, value=valor)
                 cel.border = BORDA_PADRAO
-                cel.alignment = Alignment(horizontal="center")
+                cel.alignment = Alignment(horizontal="center", vertical="center")
+                cel.fill = PatternFill(
+                    start_color=COR_FAIXA if (linha - linha_dados_inicio) % 2 == 0 else COR_FAIXA_ALT,
+                    end_color=COR_FAIXA if (linha - linha_dados_inicio) % 2 == 0 else COR_FAIXA_ALT,
+                    fill_type="solid",
+                )
                 if col_i in (13, 14):
                     cel.value = _segundos_para_duracao_excel(cel.value)
                     _formatar_duracao_excel(cel)
@@ -2130,10 +2264,13 @@ def montar_aba_detalhado(wb, resultados, periodo_txt, company_name, logo_path, n
         cel.alignment = Alignment(horizontal="center", vertical="center")
 
     for col_i in range(1, len(colunas) + 1):
-        ws.column_dimensions[get_column_letter(col_i)].width = 13
+        ws.column_dimensions[get_column_letter(col_i)].width = [14, 14, 12, 12, 12, 12, 12, 12, 14, 14, 14, 12, 12, 14][col_i - 1]
+
+    ws.sheet_view.showGridLines = False
+    ws.sheet_properties.tabColor = COR_TITULO
 
 
-def gerar_planilha(resultados, inicio, fim, nome_periodo, output_dir, company_name, logo_path, nota_vazio=None):
+def gerar_planilha(resultados, inicio, fim, nome_periodo, output_dir, company_name, logo_path, vendor_name="GRB Tecnologia", nota_vazio=None):
     _garantir_diretorio(output_dir)
     periodo_txt = "{} a {}".format(inicio.strftime("%d/%m/%Y"), fim.strftime("%d/%m/%Y"))
 
@@ -2178,23 +2315,29 @@ def gerar_planilha(resultados, inicio, fim, nome_periodo, output_dir, company_na
     return caminho_completo, nome_arquivo
 
 
-def gerar_relatorio_completo(config, inicio, fim, nome_periodo, progress_cb=None, permitir_vazio=False, nota_vazio=None):
+def gerar_relatorio_completo(config, inicio, fim, nome_periodo, progress_cb=None, permitir_vazio=False, nota_vazio=None, filtros=None):
     """Faz todo o fluxo: busca matriculas, busca os registros de cada uma,
     monta a planilha. progress_cb(feito, total) e chamado a cada funcionario,
     se for passado (usado pra barra de progresso na web)."""
+    filtros = filtros or {}
+    inicio, fim = _resolver_periodo_relatorio(inicio, fim, filtros)
+
     resultados = _construir_resultados_de_getlogs(config, inicio, fim, progress_cb=progress_cb)
     if not resultados:
         resultados = _construir_resultados_de_historico_local(config, inicio, fim, progress_cb=progress_cb)
+    resultados = filtrar_resultados_relatorio(resultados, filtros)
     if not resultados:
         if permitir_vazio:
             nota_vazio = nota_vazio or "Nenhuma marcacao encontrada no periodo."
         else:
+            if any(str(v or "").strip() for v in filtros.values()):
+                raise DeviceError("Nao encontrei funcionarios para os filtros informados.")
             raise DeviceError("O leitor nao encontrou logs no periodo escolhido. Tente gerar com o historico local ou verifique se o monitor esta rodando.")
 
     logo_path = config.get("logo_path") or ""
     caminho, nome_arquivo = gerar_planilha(
         resultados, inicio, fim, nome_periodo,
-        config["output_dir"], config["company_name"], logo_path,
+        config["output_dir"], config["company_name"], logo_path, config.get("vendor_name", "GRB Tecnologia"),
         nota_vazio=nota_vazio,
     )
     return caminho, nome_arquivo, len(resultados)

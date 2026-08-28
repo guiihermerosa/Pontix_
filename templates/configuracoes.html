@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block title %}Configuracoes • {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="cartao">
+  <div class="section-head">
+    <div class="page-title">
+      <span class="chip">Operacao do sistema</span>
+      <h1>Configuracoes do equipamento</h1>
+      <p class="subtitulo">
+        Ajuste conexao, empresa, identificacao do empregador e dados do ponto sem sair da interface.
+      </p>
+    </div>
+    <span class="dashboard-live-badge">{% if config.device_password %}Configurado{% else %}Pendente{% endif %}</span>
+  </div>
+</section>
+
+<section class="section-grid">
+  <form method="post" enctype="multipart/form-data" class="cartao stack-gap">
+    <div class="section-head">
+      <div>
+        <h2>Conexao e identidade</h2>
+        <p class="subtitulo">Dados usados pelo leitor e pelos relatorios gerados localmente.</p>
+      </div>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo">
+        Endereco IP
+        <input type="text" name="device_ip" value="{{ config.device_ip }}">
+      </label>
+      <label class="campo">
+        Porta
+        <input type="number" name="device_port" value="{{ config.device_port }}">
+      </label>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo">
+        Senha do leitor
+        <input type="password" name="device_password" value="{{ config.device_password }}">
+      </label>
+      <label class="campo">
+        Nome da empresa
+        <input type="text" name="company_name" value="{{ config.company_name }}">
+      </label>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo">
+        CNPJ/CPF do empregador
+        <input type="text" name="company_document" value="{{ config.company_document }}" placeholder="00.000.000/0000-00">
+      </label>
+      <label class="campo">
+        Identificador do REP/programa
+        <input type="text" name="rep_identifier" value="{{ config.rep_identifier }}" placeholder="Serial, nome do programa ou identificador">
+      </label>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo">
+        Pasta de saida
+        <input type="text" name="output_dir" value="{{ config.output_dir }}">
+      </label>
+      <label class="campo">
+        Intervalo de notificacao (segundos)
+        <input type="number" name="intervalo_notificacao_segundos" value="{{ config.intervalo_notificacao_segundos }}">
+      </label>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo" style="grid-column: 1 / -1;">
+        Endereco do local de prestacao
+        <input type="text" name="workplace_address" value="{{ config.workplace_address }}" placeholder="Rua, numero, bairro, cidade">
+      </label>
+    </div>
+
+    <div class="field-grid-2">
+      <label class="campo">
+        <span class="check-row">
+          <input type="checkbox" name="notificacoes_ativas" {% if config.notificacoes_ativas %}checked{% endif %}>
+          Notificacoes ativas
+        </span>
+      </label>
+      <label class="campo">
+        Logotipo da empresa
+        <input type="file" name="logo" accept=".png,.jpg,.jpeg,.webp,.gif">
+      </label>
+    </div>
+
+    {% if config.logo_path %}
+      <div class="logo-preview">
+        <img src="{{ url_for('logo_arquivo', nome_arquivo=config.logo_path) }}" alt="Logo atual">
+        <div>
+          <strong>Logo atual</strong>
+          <p class="subtitulo">{{ config.logo_path }}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="actions-row">
+      <button class="botao botao-principal" type="submit">Salvar configuracoes</button>
+      <a class="botao botao-secundario" href="{{ url_for('dashboard') }}">Ver dashboard</a>
+    </div>
+  </form>
+
+  <div class="cartao stack-gap">
+    <div class="section-head">
+      <div>
+        <h2>Diagnostico rapido</h2>
+        <p class="subtitulo">Teste conexao e retorno de notificacoes com um clique.</p>
+      </div>
+    </div>
+
+    <div class="mini-card stack-gap">
+      <h3>Teste de conexao</h3>
+      <p class="subtitulo">Usa os dados atuais para validar a comunicacao com o leitor.</p>
+      <button class="botao botao-secundario" type="button" id="btn-testar-conexao">Testar conexao</button>
+    </div>
+
+    <div class="mini-card stack-gap">
+      <h3>Teste de notificacao</h3>
+      <p class="subtitulo">A resposta informa que as notificacoes do Windows foram desativadas no fluxo atual.</p>
+      <button class="botao botao-secundario" type="button" id="btn-testar-notificacao">Testar notificacao</button>
+    </div>
+
+    <div class="mini-card">
+      <h3>Resumo atual</h3>
+      <div class="hero-grid">
+        <div>
+          <span class="chip">Empresa</span>
+          <strong>{{ config.company_name }}</strong>
+        </div>
+        <div>
+          <span class="chip">Documento</span>
+          <strong>{{ config.company_document or 'Nao informado' }}</strong>
+        </div>
+        <div>
+          <span class="chip">Saida</span>
+          <strong>{{ config.output_dir }}</strong>
+        </div>
+        <div>
+          <span class="chip">Local</span>
+          <strong>{{ config.workplace_address or 'Nao informado' }}</strong>
+        </div>
+        <div>
+          <span class="chip">REP</span>
+          <strong>{{ config.rep_identifier or 'Nao informado' }}</strong>
+        </div>
+        <div>
+          <span class="chip">Retorno</span>
+          <strong>{{ config.intervalo_notificacao_segundos }}s</strong>
+        </div>
+        <div>
+          <span class="chip">Notificacoes</span>
+          <strong>{% if config.notificacoes_ativas %}Ativas{% else %}Desativadas{% endif %}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-live-badge" id="diagnostico-msg">Pronto para testar</div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    const msg = document.getElementById('diagnostico-msg');
+    const btnConexao = document.getElementById('btn-testar-conexao');
+    const btnNotificacao = document.getElementById('btn-testar-notificacao');
+    const connPayload = {{ {
+      "device_ip": config.device_ip,
+      "device_port": config.device_port,
+      "device_password": config.device_password,
+    } | tojson }};
+    if (!msg || !btnConexao || !btnNotificacao) return;
+
+    async function postar(url, dados) {
+      const form = new FormData();
+      Object.entries(dados).forEach(([chave, valor]) => form.append(chave, valor));
+      const response = await fetch(url, { method: 'POST', body: form });
+      return response.json();
+    }
+
+    btnConexao.addEventListener('click', async () => {
+      btnConexao.disabled = true;
+      msg.textContent = 'Testando conexao...';
+      try {
+        const data = await postar('{{ url_for("testar_conexao_route") }}', connPayload);
+        msg.textContent = data.mensagem || (data.ok ? 'Conexao ok' : 'Falha na conexao');
+      } catch (error) {
+        msg.textContent = 'Falha ao testar conexao';
+      } finally {
+        btnConexao.disabled = false;
+      }
+    });
+
+    btnNotificacao.addEventListener('click', async () => {
+      btnNotificacao.disabled = true;
+      msg.textContent = 'Testando notificacao...';
+      try {
+        const response = await fetch('{{ url_for("testar_notificacao") }}', { method: 'POST' });
+        const data = await response.json();
+        msg.textContent = data.mensagem || 'Teste concluido';
+      } catch (error) {
+        msg.textContent = 'Falha ao testar notificacao';
+      } finally {
+        btnNotificacao.disabled = false;
+      }
+    });
+  })();
+</script>
+{% endblock %}

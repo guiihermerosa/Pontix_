@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard • {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="cartao">
+  <div class="section-head">
+    <div class="page-title">
+      <span class="chip">Resumo operacional</span>
+      <h1>Dashboard ao vivo</h1>
+      <p class="subtitulo">Leitura rápida do dia, com foco em status, últimas marcações e sinais de saúde da coleta.</p>
+    </div>
+    <div class="actions-row">
+      <a class="botao botao-secundario" href="{{ url_for('dashboard_api') }}" target="_blank" rel="noreferrer">Abrir API</a>
+      <a class="botao botao-principal" href="{{ url_for('conferencia') }}">Ir para conferência</a>
+    </div>
+  </div>
+</section>
+
+<section class="dashboard-grid">
+  <div class="dashboard-card">
+    <span>Funcionários</span>
+    <strong>{{ dashboard_stats.total_funcionarios }}</strong>
+  </div>
+  <div class="dashboard-card">
+    <span>Registros hoje</span>
+    <strong>{{ dashboard_stats.registros_hoje }}</strong>
+  </div>
+  <div class="dashboard-card">
+    <span>Entradas</span>
+    <strong>{{ dashboard_stats.entradas }}</strong>
+  </div>
+  <div class="dashboard-card">
+    <span>Saídas</span>
+    <strong>{{ dashboard_stats.saidas }}</strong>
+  </div>
+  <div class="dashboard-card">
+    <span>Pendentes</span>
+    <strong>{{ dashboard_stats.pendentes }}</strong>
+  </div>
+  <div class="dashboard-card">
+    <span>Leitor</span>
+    <strong>{{ dashboard_stats.status_leitor|upper }}</strong>
+  </div>
+  <div class="dashboard-card">
+    <span>Ajustes hoje</span>
+    <strong>{{ dashboard_stats.ajustes_hoje }}</strong>
+  </div>
+  <div class="dashboard-card">
+    <span>Última coleta</span>
+    <strong>{% if dashboard_stats.ultima_coleta_em %}{{ fmt_data_hora(dashboard_stats.ultima_coleta_em) }}{% else %}Sem dados{% endif %}</strong>
+  </div>
+</section>
+
+<section class="section-grid">
+  <div class="cartao dashboard-latest">
+    <div class="dashboard-latest-topo">
+      <div>
+        <h2>Última coleta</h2>
+        <p class="dashboard-latest-texto">
+          {% if dashboard_latest %}
+            {{ dashboard_latest.nome }} • {{ dashboard_latest.acao }} • {{ fmt_hora(dashboard_latest.hora) }}
+          {% else %}
+            Sem registro recente.
+          {% endif %}
+        </p>
+      </div>
+      <span class="dashboard-live-badge">{{ dashboard_stats.alerta_status }}</span>
+    </div>
+
+    <hr class="divider">
+
+    <div class="hero-grid">
+      <div class="mini-card">
+        <span class="chip">Pessoa</span>
+        <strong>{% if dashboard_latest %}{{ dashboard_latest.nome }}{% else %}--{% endif %}</strong>
+        <p class="subtitulo">{% if dashboard_latest %}{{ dashboard_latest.departamento or 'Sem departamento' }}{% else %}Aguardando novas marcações{% endif %}</p>
+      </div>
+      <div class="mini-card">
+        <span class="chip">Situação</span>
+        <strong>{% if dashboard_latest %}{{ dashboard_latest.acao }}{% else %}Sem leitura{% endif %}</strong>
+        <p class="subtitulo">{% if dashboard_latest %}Matrícula {{ dashboard_latest.matricula or '-' }}{% else %}O leitor ainda não enviou eventos{% endif %}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cartao">
+    <div class="section-head">
+      <div>
+        <h2>Últimas marcações</h2>
+        <p class="subtitulo">Lista curta para conferência visual imediata.</p>
+      </div>
+      <a class="botao botao-terciario" href="{{ url_for('auditoria_view') }}">Abrir auditoria</a>
+    </div>
+
+    {% if dashboard_recentes %}
+      <div class="list-stack">
+        {% for item in dashboard_recentes %}
+          <article class="record-item">
+            <div class="record-meta">
+              <span class="action-pill">{{ item.acao }}</span>
+              <strong>{{ item.nome }}</strong>
+              <p>{{ fmt_hora(item.hora) }} • {{ item.departamento or 'Sem departamento' }}</p>
+              <small>Matrícula {{ item.matricula or '-' }} • {{ item.source or 'local' }}</small>
+            </div>
+            <div class="record-meta" style="text-align:right;">
+              <small>{{ item.note or 'Registro sem observações' }}</small>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="dashboard-vazio">Ainda não há marcações para exibir.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
