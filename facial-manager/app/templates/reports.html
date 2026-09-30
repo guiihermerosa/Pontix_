@@ -1,0 +1,115 @@
+﻿{% extends "base.html" %}
+{% block title %}Relatórios — Pontix{% endblock %}
+{% block page_title %}Relatórios{% endblock %}
+
+{% block content %}
+<div class="content-grid content-grid-single">
+
+  <!-- Presença -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Relatório de Presença</h2>
+    </div>
+    <div class="settings-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="r_start">Data inicial</label>
+          <input type="date" id="r_start" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label for="r_end">Data final</label>
+          <input type="date" id="r_end" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label for="r_employee">Funcionário</label>
+          <select id="r_employee" class="form-input">
+            <option value="">Todos</option>
+            {% for emp in employees %}
+            <option value="{{ emp.userid }}">{{ emp.name or emp.userid }} ({{ emp.userid }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="r_type">Tipo</label>
+          <select id="r_type" class="form-input">
+            <option value="">Todos</option>
+            <option value="ENTRY">Entrada</option>
+            <option value="EXIT">Saída</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="exportAttendance('xlsx')">
+          <svg viewBox="0 0 20 20" fill="currentColor" style="width:1em;height:1em"><path fill-rule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v9.19l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3.75 3.75a.75.75 0 0 1-1.06 0L5.72 11.53a.75.75 0 0 1 1.06-1.06l2.47 2.47V3.75A.75.75 0 0 1 10 3ZM3.5 15.25a.75.75 0 0 1 .75-.75h11.5a.75.75 0 0 1 0 1.5H4.25a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"/></svg>
+          Exportar Excel
+        </button>
+        <button class="btn btn-ghost" onclick="exportAttendance('csv')">
+          Exportar CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Funcionários -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Cadastro de Funcionários</h2>
+    </div>
+    <p class="text-muted text-sm mb-3">Exporta o cadastro completo de funcionários com status de sincronização.</p>
+    <div class="form-actions">
+      <a href="/api/reports/employees.xlsx" class="btn btn-primary">
+        <svg viewBox="0 0 20 20" fill="currentColor" style="width:1em;height:1em"><path fill-rule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v9.19l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3.75 3.75a.75.75 0 0 1-1.06 0L5.72 11.53a.75.75 0 0 1 1.06-1.06l2.47 2.47V3.75A.75.75 0 0 1 10 3ZM3.5 15.25a.75.75 0 0 1 .75-.75h11.5a.75.75 0 0 1 0 1.5H4.25a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"/></svg>
+        Exportar Excel
+      </a>
+      <a href="/api/reports/employees.csv" class="btn btn-ghost">Exportar CSV</a>
+    </div>
+  </div>
+
+  <!-- Fila de sincronização -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Fila de Sincronização</h2>
+      <button class="btn btn-ghost btn-sm" onclick="loadQueue()">↻ Atualizar</button>
+    </div>
+    <div id="queueContent"><p class="text-muted text-sm">Clique em "Atualizar" para carregar a fila.</p></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function exportAttendance(fmt) {
+  const start = document.getElementById('r_start').value;
+  const end   = document.getElementById('r_end').value;
+  const emp   = document.getElementById('r_employee').value;
+  const type  = document.getElementById('r_type').value;
+  const p = new URLSearchParams();
+  if (start) p.set('start_date', start);
+  if (end)   p.set('end_date', end);
+  if (emp)   p.set('userid', emp);
+  if (type)  p.set('record_type', type);
+  window.location.href = `/api/reports/attendance.${fmt}?` + p.toString();
+}
+
+async function loadQueue() {
+  const r = await fetch('/api/sync/queue?page_size=30');
+  const d = await r.json();
+  const el = document.getElementById('queueContent');
+  if (!d.items.length) { el.innerHTML = '<p class="text-muted text-sm">Fila vazia.</p>'; return; }
+  let html = '<div class="table-wrapper"><table class="table"><thead><tr><th>Tipo</th><th>ID</th><th>Op.</th><th>Status</th><th>Tentativas</th><th>Erro</th></tr></thead><tbody>';
+  for (const i of d.items) {
+    const badge = {SUCCESS:'badge-success',ERROR:'badge-danger',PENDING:'badge-warning',PROCESSING:'badge-info'}[i.status] || 'badge-neutral';
+    html += `<tr><td>${i.entity_type}</td><td class="font-mono">${i.entity_id||''}</td><td>${i.operation}</td>
+      <td><span class="badge ${badge}">${i.status}</span></td>
+      <td>${i.attempts}</td><td class="text-sm text-muted">${i.last_error||''}</td></tr>`;
+  }
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+// Inicializa datas
+document.getElementById('r_start').value = new Date().toISOString().slice(0,7) + '-01';
+document.getElementById('r_end').value   = new Date().toISOString().slice(0,10);
+</script>
+{% endblock %}

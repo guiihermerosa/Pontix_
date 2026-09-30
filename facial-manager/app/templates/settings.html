@@ -1,0 +1,476 @@
+﻿{% extends "base.html" %}
+{% block title %}Configurações — Pontix{% endblock %}
+{% block page_title %}Configurações{% endblock %}
+
+{% block content %}
+
+<!-- Tabs -->
+<div class="tabs" role="tablist">
+  <button class="tab active" role="tab" aria-selected="true"  onclick="showTab('tab-system',this)">Sistema</button>
+  <button class="tab"        role="tab" aria-selected="false" onclick="showTab('tab-device',this)">Dispositivo</button>
+  <button class="tab"        role="tab" aria-selected="false" onclick="showTab('tab-network',this)">Rede</button>
+  <button class="tab"        role="tab" aria-selected="false" onclick="showTab('tab-sync',this)">Sincronização</button>
+  <button class="tab"        role="tab" aria-selected="false" onclick="showTab('tab-integrations',this)">Integrações</button>
+  <button class="tab"        role="tab" aria-selected="false" onclick="showTab('tab-recipients',this)">Destinatários</button>
+  <button class="tab"        role="tab" aria-selected="false" onclick="showTab('tab-email-reports',this)">Relatórios por Email</button>
+</div>
+
+<!-- TAB: Sistema -->
+<div class="tab-panel" id="tab-system">
+  <div class="panel">
+    <div class="panel-header"><h2 class="panel-title">Configurações do Sistema</h2></div>
+    <form id="systemSettingsForm" class="settings-form" onsubmit="return false">
+
+      <div class="settings-section">
+        <h3 class="settings-section-title">Identidade da Empresa</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="s_company_name">Nome da Empresa</label>
+            <input type="text" id="s_company_name" name="company_name" class="form-input"
+                   value="{{ settings.company_name or '' }}" placeholder="Ex: Empresa LTDA" />
+          </div>
+          <div class="form-group">
+            <label for="s_company_cnpj">CNPJ</label>
+            <input type="text" id="s_company_cnpj" name="company_cnpj" class="form-input"
+                   value="{{ settings.company_cnpj or '' }}" placeholder="00.000.000/0000-00" maxlength="18" />
+          </div>
+          <div class="form-group" style="grid-column: 1 / -1">
+            <label for="s_company_address">Endereço</label>
+            <input type="text" id="s_company_address" name="company_address" class="form-input"
+                   value="{{ settings.company_address or '' }}" placeholder="Rua, número — Cidade/UF" />
+          </div>
+        </div>
+
+        <!-- Upload de logo -->
+        <div class="form-group mt-2">
+          <label>Logotipo <span class="form-hint">(PNG ou JPEG · recomendado 300×100 px · máx 500 KB)</span></label>
+          <div id="logoPreviewBox" style="display:none; margin-bottom:8px">
+            <img id="logoPreviewImg" src="" alt="Logo atual"
+                 style="max-height:80px; max-width:320px; border:1px solid #d0d7de; border-radius:6px; padding:4px; background:#fff" />
+            <button type="button" class="btn btn-ghost btn-sm" style="margin-left:8px; color:#c0392b" onclick="removeLogo()">
+              ✕ Remover logo
+            </button>
+          </div>
+          <div id="logoUploadBox">
+            <label for="s_logo_file" class="btn btn-secondary btn-sm" style="cursor:pointer">
+              📂 Escolher imagem…
+            </label>
+            <input type="file" id="s_logo_file" accept="image/png,image/jpeg,image/webp"
+                   style="display:none" onchange="handleLogoUpload(this)" />
+            <span id="logoFileName" class="form-hint" style="margin-left:8px"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="settings-section-title">Facial ALPHA-1111</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="s_host">IP do Dispositivo</label>
+            <input type="text" id="s_host" name="device_host" class="form-input"
+                   value="{{ settings.device_host or '' }}" placeholder="192.168.0.24" />
+          </div>
+          <div class="form-group">
+            <label for="s_port">Porta</label>
+            <input type="number" id="s_port" name="device_port" class="form-input"
+                   value="{{ settings.device_port or '80' }}" min="1" max="65535" />
+          </div>
+          <div class="form-group">
+            <label for="s_password">Senha do Dispositivo</label>
+            <input type="password" id="s_password" name="device_password" class="form-input"
+                   placeholder="{% if settings.device_password_set %}••••••• (definida){% else %}Não definida{% endif %}"
+                   autocomplete="new-password" />
+            <span class="form-hint">Deixe em branco para manter a senha atual.</span>
+          </div>
+          <div class="form-group">
+            <label for="s_timeout">Timeout (segundos)</label>
+            <input type="number" id="s_timeout" name="device_timeout" class="form-input"
+                   value="{{ settings.device_timeout or '10' }}" min="1" max="60" />
+          </div>
+        </div>
+        <!-- Teste de conexão -->
+        <div class="connection-test">
+          <button type="button" class="btn btn-secondary" onclick="testConnection()">
+            🔌 Testar Conexão
+          </button>
+          <div class="connection-result" id="connectionResult"></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="settings-section-title">Logs</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="s_loglevel">Nível de log</label>
+            <select id="s_loglevel" name="log_level" class="form-input">
+              {% for level in ['DEBUG','INFO','WARNING','ERROR'] %}
+              <option value="{{ level }}" {% if settings.log_level == level %}selected{% endif %}>{{ level }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="s_retention">Retenção (dias)</label>
+            <input type="number" id="s_retention" name="log_retention_days" class="form-input"
+                   value="{{ settings.log_retention_days or '30' }}" min="1" max="365" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Salvar Configurações</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- TAB: Dispositivo -->
+<div class="tab-panel hidden" id="tab-device">
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Configurações do Dispositivo</h2>
+      <span class="badge badge-neutral text-xs">Lê/grava direto no ALPHA-1111</span>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="tabs tabs-sm">
+      <button class="tab active" onclick="showSubTab('dev-local',this)">Local</button>
+      <button class="tab" onclick="showSubTab('dev-identify',this)">Reconhecimento</button>
+      <button class="tab" onclick="showSubTab('dev-access',this)">Controle de Acesso</button>
+      <button class="tab" onclick="showSubTab('dev-shifts',this)">Jornadas</button>
+      <button class="tab" onclick="showSubTab('dev-rules',this)">Regras</button>
+      <button class="tab" onclick="showSubTab('dev-holidays',this)">Feriados</button>
+    </div>
+
+    <div id="dev-local" class="dev-panel">
+      <p class="text-muted text-sm mb-2">Carregando configurações locais…</p>
+      <div id="devLocalContent"></div>
+      <div class="form-actions">
+        <button class="btn btn-ghost btn-sm" onclick="loadDevLocal()">↻ Recarregar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveDevLocal()">Salvar no device</button>
+      </div>
+    </div>
+
+    <div id="dev-identify" class="dev-panel hidden">
+      <div id="devIdentifyContent"><p class="text-muted text-sm">Clique em "Recarregar" para buscar os dados.</p></div>
+      <div class="form-actions">
+        <button class="btn btn-ghost btn-sm" onclick="loadDevIdentify()">↻ Recarregar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveDevIdentify()">Salvar no device</button>
+      </div>
+    </div>
+
+    <div id="dev-access" class="dev-panel hidden">
+      <div id="devAccessContent"><p class="text-muted text-sm">Clique em "Recarregar" para buscar os dados.</p></div>
+      <div class="form-actions">
+        <button class="btn btn-ghost btn-sm" onclick="loadDevAccess()">↻ Recarregar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveDevAccess()">Salvar no device</button>
+      </div>
+    </div>
+
+    <div id="dev-shifts" class="dev-panel hidden">
+      <div id="devShiftsContent"><p class="text-muted text-sm">Clique em "Recarregar" para buscar os dados.</p></div>
+      <div class="form-actions">
+        <button class="btn btn-ghost btn-sm" onclick="loadDevShifts()">↻ Recarregar</button>
+      </div>
+    </div>
+
+    <div id="dev-rules" class="dev-panel hidden">
+      <div id="devRulesContent"><p class="text-muted text-sm">Clique em "Recarregar" para buscar os dados.</p></div>
+      <div class="form-actions">
+        <button class="btn btn-ghost btn-sm" onclick="loadDevRules()">↻ Recarregar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveDevRules()">Salvar no device</button>
+      </div>
+    </div>
+
+    <div id="dev-holidays" class="dev-panel hidden">
+      <div id="devHolidaysContent"><p class="text-muted text-sm">Clique em "Recarregar" para buscar os dados.</p></div>
+      <div class="form-actions">
+        <button class="btn btn-ghost btn-sm" onclick="loadDevHolidays()">↻ Recarregar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: Rede -->
+<div class="tab-panel hidden" id="tab-network">
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Rede do Dispositivo</h2>
+      <button class="btn btn-ghost btn-sm" onclick="loadNetworkInfo()">↻ Atualizar</button>
+    </div>
+    <div id="networkContent">
+      <p class="text-muted text-sm">Clique em "Atualizar" para buscar informações de rede.</p>
+    </div>
+  </div>
+
+  <div class="panel mt-3">
+    <div class="panel-header">
+      <h2 class="panel-title">Redes Wi-Fi</h2>
+      <button class="btn btn-ghost btn-sm" onclick="scanWifi()">📡 Escanear</button>
+    </div>
+    <div id="wifiContent"><p class="text-muted text-sm">Clique em "Escanear" para listar redes.</p></div>
+  </div>
+
+  <div class="panel mt-3">
+    <div class="panel-header">
+      <h2 class="panel-title">Configuração do Servidor</h2>
+      <button class="btn btn-ghost btn-sm" onclick="loadServerSettings()">↻ Carregar</button>
+    </div>
+    <div id="serverContent"><p class="text-muted text-sm">Clique em "Carregar" para buscar.</p></div>
+  </div>
+</div>
+
+<!-- TAB: Sincronização -->
+<div class="tab-panel hidden" id="tab-sync">
+  <div class="panel">
+    <div class="panel-header"><h2 class="panel-title">Sincronização Automática</h2></div>
+    <form id="syncSettingsForm" class="settings-form" onsubmit="return false">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="s_sync_auto">Sincronização automática</label>
+          <select id="s_sync_auto" name="sync_auto_enabled" class="form-input">
+            <option value="true"  {% if settings.sync_auto_enabled == 'true'  %}selected{% endif %}>Ativada</option>
+            <option value="false" {% if settings.sync_auto_enabled == 'false' %}selected{% endif %}>Desativada</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="s_sync_interval">Intervalo</label>
+          <select id="s_sync_interval" name="sync_interval" class="form-input">
+            {% for v, l in [('2','2 segundos'),('5','5 segundos'),('10','10 segundos'),('30','30 segundos'),('60','1 minuto'),('300','5 minutos')] %}
+            <option value="{{ v }}" {% if settings.sync_interval == v %}selected{% endif %}>{{ l }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="s_sync_emp">Sincronizar funcionários</label>
+          <select id="s_sync_emp" name="sync_employees" class="form-input">
+            <option value="true"  {% if settings.sync_employees != 'false' %}selected{% endif %}>Sim</option>
+            <option value="false" {% if settings.sync_employees == 'false' %}selected{% endif %}>Não</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="s_sync_att">Sincronizar marcações</label>
+          <select id="s_sync_att" name="sync_attendance" class="form-input">
+            <option value="true"  {% if settings.sync_attendance != 'false' %}selected{% endif %}>Sim</option>
+            <option value="false" {% if settings.sync_attendance == 'false' %}selected{% endif %}>Não</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-secondary" onclick="runSyncNow()">▶ Sincronizar agora</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Logs de sincronização -->
+  <div class="panel mt-3">
+    <div class="panel-header">
+      <h2 class="panel-title">Histórico de Sincronizações</h2>
+      <button class="btn btn-ghost btn-sm" onclick="loadSyncLogs()">↻ Atualizar</button>
+    </div>
+    <div id="syncLogsContent"><p class="text-muted text-sm">Clique em "Atualizar" para carregar.</p></div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- TAB: Integrações                                                  -->
+<!-- ================================================================ -->
+<div class="tab-panel hidden" id="tab-integrations">
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Integrações</h2>
+      <span class="badge badge-neutral text-xs">Serviços externos</span>
+    </div>
+
+    <div class="settings-section">
+      <h3 class="settings-section-title">
+        <span style="margin-right:6px">📧</span> Resend — Envio de Email
+      </h3>
+      <p class="text-muted text-sm" style="margin-bottom:1rem">
+        Configure sua API key do <a href="https://resend.com" target="_blank" style="color:var(--color-primary)">resend.com</a>
+        para habilitar o envio automático de relatórios por email.
+      </p>
+
+      <form id="integrationForm" class="settings-form" onsubmit="return false">
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1">
+            <label for="i_api_key">API Key</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="password" id="i_api_key" name="resend_api_key" class="form-input"
+                     placeholder="re_xxxxxxxxxxxxxxxxxxxx" autocomplete="new-password"
+                     style="flex:1" />
+              <button type="button" class="btn btn-ghost btn-sm" onclick="toggleApiKeyVisibility()"
+                      id="toggleKeyBtn" title="Mostrar/ocultar">👁</button>
+            </div>
+            <span class="form-hint" id="apiKeyHint"></span>
+          </div>
+          <div class="form-group">
+            <label for="i_from_name">Nome do remetente</label>
+            <input type="text" id="i_from_name" name="resend_from_name" class="form-input"
+                   placeholder="Ex: Pontix — GRB Tecnologia" />
+          </div>
+          <div class="form-group">
+            <label for="i_from_email">Email remetente</label>
+            <input type="email" id="i_from_email" name="resend_from_email" class="form-input"
+                   placeholder="noreply@seudominio.com.br" />
+            <span class="form-hint">
+              ⚠ Use um email do <strong>seu domínio verificado</strong> no Resend
+              (ex: <code>noreply@seudominio.com.br</code>).<br/>
+              Com domínio verificado você pode enviar para qualquer destinatário.
+              Sem domínio, só envia para o email da sua conta Resend.
+            </span>
+          </div>
+        </div>
+
+        <!-- Teste de envio -->
+        <div class="settings-section" style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--color-border)">
+          <h3 class="settings-section-title">Testar integração</h3>
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="flex:1;min-width:220px;margin:0">
+              <label for="i_test_email">Enviar email de teste para</label>
+              <input type="email" id="i_test_email" class="form-input" placeholder="seu@email.com" />
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="sendTestEmail()"
+                    id="testEmailBtn" style="height:40px">
+              🚀 Enviar teste
+            </button>
+          </div>
+          <div id="testEmailResult" style="margin-top:8px"></div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Salvar integração</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- TAB: Destinatários                                                -->
+<!-- ================================================================ -->
+<div class="tab-panel hidden" id="tab-recipients">
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Destinatários de Email</h2>
+      <button class="btn btn-primary btn-sm" onclick="openAddRecipient()">+ Adicionar</button>
+    </div>
+
+    <div id="recipientsTable">
+      <p class="text-muted text-sm">Carregando…</p>
+    </div>
+  </div>
+
+  <!-- Formulário de adição (oculto) -->
+  <div class="panel mt-3 hidden" id="addRecipientPanel">
+    <div class="panel-header"><h2 class="panel-title">Novo destinatário</h2></div>
+    <form id="addRecipientForm" class="settings-form" onsubmit="submitAddRecipient(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="r_name">Nome</label>
+          <input type="text" id="r_name" class="form-input" placeholder="João Silva" required />
+        </div>
+        <div class="form-group">
+          <label for="r_email">Email</label>
+          <input type="email" id="r_email" class="form-input" placeholder="joao@empresa.com" required />
+        </div>
+        <div class="form-group">
+          <label for="r_role">Tipo</label>
+          <select id="r_role" class="form-input">
+            <option value="owner">Proprietário</option>
+            <option value="accounting">Contabilidade</option>
+            <option value="other">Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Salvar destinatário</button>
+        <button type="button" class="btn btn-ghost" onclick="closeAddRecipient()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- TAB: Relatórios por Email                                         -->
+<!-- ================================================================ -->
+<div class="tab-panel hidden" id="tab-email-reports">
+  <div class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Relatórios por Email</h2>
+      <span class="badge badge-neutral text-xs">Envio automático mensal</span>
+    </div>
+
+    <form id="scheduleForm" class="settings-form" onsubmit="return false">
+      <div class="settings-section">
+        <h3 class="settings-section-title">Agendamento automático</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="sc_enabled">Envio automático</label>
+            <select id="sc_enabled" name="email_send_enabled" class="form-input">
+              <option value="true">Ativado</option>
+              <option value="false">Desativado</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sc_day">Dia do mês para envio</label>
+            <input type="number" id="sc_day" name="email_send_day" class="form-input"
+                   min="1" max="28" placeholder="1" />
+            <span class="form-hint">Envio às 07:00 do dia configurado (máx: 28)</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Salvar agendamento</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Envio manual -->
+  <div class="panel mt-3">
+    <div class="panel-header">
+      <h2 class="panel-title">Enviar agora</h2>
+      <span class="badge badge-neutral text-xs">Disparo manual</span>
+    </div>
+    <div style="padding:1rem 0">
+      <p class="text-muted text-sm" style="margin-bottom:1rem">
+        Envia o relatório do período selecionado imediatamente para todos os destinatários ativos.
+      </p>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div class="form-group" style="margin:0">
+          <label for="sr_month">Mês</label>
+          <select id="sr_month" class="form-input" style="min-width:140px">
+            <option value="1">Janeiro</option>
+            <option value="2">Fevereiro</option>
+            <option value="3">Março</option>
+            <option value="4">Abril</option>
+            <option value="5">Maio</option>
+            <option value="6">Junho</option>
+            <option value="7">Julho</option>
+            <option value="8">Agosto</option>
+            <option value="9">Setembro</option>
+            <option value="10">Outubro</option>
+            <option value="11">Novembro</option>
+            <option value="12">Dezembro</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label for="sr_year">Ano</label>
+          <input type="number" id="sr_year" class="form-input" style="width:100px"
+                 min="2020" max="2099" />
+        </div>
+        <button type="button" class="btn btn-primary" onclick="sendReportNow()" id="sendReportBtn"
+                style="height:40px">
+          📤 Enviar relatório
+        </button>
+      </div>
+      <div id="sendReportResult" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static('js/settings.js') }}"></script>
+{% endblock %}

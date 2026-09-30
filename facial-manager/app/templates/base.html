@@ -1,0 +1,94 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Pontix{% endblock %}</title>
+  <link rel="stylesheet" href="{{ static('css/app.css') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <rect width="28" height="28" rx="8" fill="#2563EB"/>
+      <path d="M7 10a7 7 0 0 1 14 0v2a7 7 0 0 1-14 0v-2Z" fill="white" opacity=".9"/>
+      <circle cx="14" cy="19" r="4" fill="white" opacity=".9"/>
+    </svg>
+    <span class="sidebar-logo-text">Pontix</span>
+  </div>
+
+  <nav class="sidebar-nav" aria-label="Navegação principal">
+    <a href="/" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2 10.5A8.5 8.5 0 1 1 10.5 19 8.51 8.51 0 0 1 2 10.5ZM10.5 4a.5.5 0 0 0-.5.5V10a.5.5 0 0 0 .146.354l3 3a.5.5 0 0 0 .708-.708L11 10.207V4.5a.5.5 0 0 0-.5-.5Z" clip-rule="evenodd" fill-rule="evenodd"/></svg>
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4Zm0 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2Zm0 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2Z"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <a href="/funcionarios" class="nav-item {% if active_page == 'employees' %}active{% endif %}">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM17 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 0 0-1.5-4.33A5 5 0 0 1 19 16v1h-6.07ZM6 11a5 5 0 0 1 5 5v1H1v-1a5 5 0 0 1 5-5Z"/></svg>
+      <span>Funcionários</span>
+    </a>
+    <a href="/presenca" class="nav-item {% if active_page == 'attendance' %}active{% endif %}">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6 2a1 1 0 0 0-1 1v1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1V3a1 1 0 1 0-2 0v1H7V3a1 1 0 0 0-1-1Zm0 5a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2H6Z" clip-rule="evenodd"/></svg>
+      <span>Presença</span>
+    </a>
+    <a href="/relatorios" class="nav-item {% if active_page == 'reports' %}active{% endif %}">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3Zm5 4a1 1 0 0 1 1-1h4a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1Zm-2 4a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H7a1 1 0 0 1-1-1Z" clip-rule="evenodd"/></svg>
+      <span>Relatórios</span>
+    </a>
+    <div class="nav-divider"></div>
+    <a href="/configuracoes" class="nav-item {% if active_page == 'settings' %}active{% endif %}">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .205 1.251l-1.18 2.044a1 1 0 0 1-1.186.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.113a7.047 7.047 0 0 1 0-2.228L1.821 7.773a1 1 0 0 1-.205-1.251l1.18-2.044a1 1 0 0 1 1.186-.447l1.598.54A6.993 6.993 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd"/></svg>
+      <span>Configurações</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="device-status-indicator" id="sidebarDeviceStatus">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Verificando…</span>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main-wrapper">
+  <!-- Top bar -->
+  <header class="topbar">
+    <button class="topbar-toggle" id="sidebarToggle" aria-label="Abrir menu">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75Zm0 10.5a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75ZM2 10a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 2 10Z" clip-rule="evenodd"/></svg>
+    </button>
+    <h1 class="topbar-title">{% block page_title %}Dashboard{% endblock %}</h1>
+    <div class="topbar-actions">
+      <button class="btn btn-sm btn-ghost" id="syncNowBtn" title="Sincronizar agora">
+        <svg viewBox="0 0 20 20" fill="currentColor" id="syncIcon"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H5.498a.75.75 0 0 0-.75.75v3.498a.75.75 0 0 0 1.5 0v-1.84l.311.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.46-.335Zm-9.12-3.348a5.5 5.5 0 0 1 9.199-2.466l.312.311H13.27a.75.75 0 0 0 0 1.5h3.498a.75.75 0 0 0 .75-.75V2.972a.75.75 0 0 0-1.5 0v1.84l-.311-.311a7 7 0 0 0-11.712 3.138.75.75 0 0 0 1.46.335Z" clip-rule="evenodd"/></svg>
+        <span class="d-none-mobile">Sincronizar</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <span>Feito por <strong>GRB Tecnologia</strong></span>
+  </footer>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<!-- Modal overlay -->
+<div class="modal-overlay" id="modalOverlay"></div>
+
+<script src="{{ static('js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

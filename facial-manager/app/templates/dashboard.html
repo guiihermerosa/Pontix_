@@ -1,0 +1,177 @@
+﻿{% extends "base.html" %}
+{% block title %}Dashboard — Pontix{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Status cards -->
+<div class="cards-grid">
+
+  <!-- Status do dispositivo -->
+  <div class="card card-status {% if status.device_online %}card-online{% else %}card-offline{% endif %}">
+    <div class="card-header">
+      <span class="card-label">Dispositivo</span>
+      <span class="badge {% if status.device_online %}badge-success{% else %}badge-danger{% endif %}">
+        {% if status.device_online %}🟢 Online{% else %}🔴 Offline{% endif %}
+      </span>
+    </div>
+    <div class="card-value">ALPHA-1111</div>
+    <div class="card-meta">
+      {% if status.device_response_time %}
+        Resposta: {{ "%.0f"|format(status.device_response_time) }} ms
+      {% elif status.last_error %}
+        {{ status.last_error | truncate(50) }}
+      {% else %}
+        Aguardando verificação…
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Funcionários -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label">Funcionários</span>
+      <svg class="card-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM17 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 0 0-1.5-4.33A5 5 0 0 1 19 16v1h-6.07ZM6 11a5 5 0 0 1 5 5v1H1v-1a5 5 0 0 1 5-5Z"/></svg>
+    </div>
+    <div class="card-value">{{ status.total_employees }}</div>
+    <div class="card-meta">{{ status.synced_employees }} sincronizados</div>
+  </div>
+
+  <!-- Pendências -->
+  <div class="card {% if status.pending_sync > 0 %}card-warning{% endif %}">
+    <div class="card-header">
+      <span class="card-label">Pendências</span>
+      <svg class="card-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clip-rule="evenodd"/></svg>
+    </div>
+    <div class="card-value">{{ status.pending_sync }}</div>
+    <div class="card-meta">itens na fila de sync</div>
+  </div>
+
+  <!-- Marcações hoje -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label">Marcações Hoje</span>
+      <svg class="card-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 0 0-1 1v1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1V3a1 1 0 1 0-2 0v1H7V3a1 1 0 0 0-1-1Zm0 5a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2H6Z" clip-rule="evenodd"/></svg>
+    </div>
+    <div class="card-value">{{ today_count }}</div>
+    <div class="card-meta">
+      {% if status.last_sync_at %}
+        Última sync: {{ status.last_sync_at | replace("T", " ") | truncate(16, true, '') }}
+      {% else %}
+        Nenhuma sincronização ainda
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Main content grid -->
+<div class="content-grid">
+
+  <!-- Quem passou hoje -->
+  <section class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Presença Hoje</h2>
+      <span class="badge badge-neutral">{{ today_status | length }} funcionários</span>
+    </div>
+    <div class="today-grid">
+      {% for person in today_status %}
+      <div class="today-card {% if person.passed %}today-passed{% else %}today-absent{% endif %}">
+        <div class="today-avatar">{{ (person.name or person.userid)[:1] | upper }}</div>
+        <div class="today-info">
+          <span class="today-name">{{ person.name or person.userid }}</span>
+          {% if person.passed %}
+            <span class="today-time">{{ person.last_time }}</span>
+          {% else %}
+            <span class="today-absent-label">—</span>
+          {% endif %}
+        </div>
+        <span class="today-badge {% if person.passed %}badge-success{% else %}badge-neutral{% endif %}">
+          {% if person.passed %}PASSOU{% else %}AGUARDANDO{% endif %}
+        </span>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <p>Nenhum funcionário cadastrado.</p>
+        <a href="/funcionarios" class="btn btn-primary btn-sm">Cadastrar funcionário</a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Últimas marcações -->
+  <section class="panel">
+    <div class="panel-header">
+      <h2 class="panel-title">Últimas Marcações</h2>
+      <a href="/presenca" class="btn btn-ghost btn-sm">Ver todas →</a>
+    </div>
+    {% if recent_records %}
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Horário</th>
+            <th>Funcionário</th>
+            <th>Data</th>
+            <th>Tipo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rec in recent_records %}
+          <tr>
+            <td class="font-mono text-sm">{{ rec.attendance_time[:5] }}</td>
+            <td>
+              <div class="cell-primary">{{ rec.employee_name or rec.userid }}</div>
+              <div class="cell-secondary">ID: {{ rec.userid }}</div>
+            </td>
+            <td class="text-sm">{{ rec.attendance_date }}</td>
+            <td>
+              <span class="badge {% if rec.record_type == 'ENTRY' %}badge-success{% elif rec.record_type == 'EXIT' %}badge-info{% else %}badge-neutral{% endif %}">
+                {% if rec.record_type == 'ENTRY' %}Entrada{% elif rec.record_type == 'EXIT' %}Saída{% else %}—{% endif %}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <p>Nenhuma marcação registrada ainda.</p>
+      <p class="text-sm text-muted">O sistema sincroniza automaticamente a cada ciclo.</p>
+    </div>
+    {% endif %}
+  </section>
+
+</div>
+
+<!-- Sync status bar -->
+{% if status.last_sync_summary %}
+<div class="status-bar">
+  <span class="status-bar-label">Último ciclo de sync:</span>
+  <span>{{ status.last_sync_summary }}</span>
+  {% if status.last_error %}
+    <span class="text-danger text-sm ml-auto">⚠ {{ status.last_error | truncate(80) }}</span>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-refresh do status a cada 15s
+setInterval(async () => {
+  try {
+    const data = await fetch('/api/device/status').then(r => r.json());
+    const dot  = document.getElementById('statusDot');
+    const txt  = document.getElementById('statusText');
+    if (data.device_online) {
+      dot.className = 'status-dot online';
+      txt.textContent = `Online · ${data.device_response_time ? Math.round(data.device_response_time) + ' ms' : ''}`;
+    } else {
+      dot.className = 'status-dot offline';
+      txt.textContent = 'Offline';
+    }
+  } catch {}
+}, 15000);
+</script>
+{% endblock %}

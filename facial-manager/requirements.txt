@@ -1,0 +1,59 @@
+# FastAPI e Core
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.18
+
+# Database
+sqlalchemy==2.0.36
+sqlalchemy[asyncio]==2.0.36
+psycopg2-binary==2.9.10
+aiosqlite==0.20.0
+greenlet==3.1.1
+
+# Validation & Config
+pydantic==2.10.1
+pydantic-settings==2.6.1
+
+# HTTP & Networking
+httpx==0.28.0
+requests==2.32.3
+
+# Supabase
+supabase==1.1.2
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+pyjwt==2.10.0
+
+# Email
+resend==2.48.0
+
+# Scheduling
+apscheduler==3.10.4
+
+# Templates & Frontend
+jinja2==3.1.4
+
+# Excel & Files
+openpyxl==3.1.5
+Pillow==12.3.0
+python-magic==0.4.27
+
+# Environment & Security
+python-dotenv==1.0.1
+cryptography==44.0.2
+
+# Monitoring & Logging
+structlog==25.1.0
+sentry-sdk==2.13.0
+
+# Utilities
+python-dateutil==2.9.0.post0
+pytz==2024.2
+tzdata==2024.2
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.25.0
+
+# Development
+python-magic==0.4.27

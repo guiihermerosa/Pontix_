@@ -1,0 +1,195 @@
+﻿{% extends "base.html" %}
+{% block title %}Funcionários — Pontix{% endblock %}
+{% block page_title %}Funcionários{% endblock %}
+
+{% block content %}
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="toolbar-search">
+    <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/></svg>
+    <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nome ou ID…" aria-label="Buscar funcionário" />
+  </div>
+  <div class="toolbar-filters">
+    <select id="syncFilter" class="select-sm" aria-label="Filtrar por status">
+      <option value="">Todos os status</option>
+      <option value="PENDING">Pendente</option>
+      <option value="SUCCESS">Sincronizado</option>
+      <option value="ERROR">Com erro</option>
+    </select>
+  </div>
+  <div class="toolbar-actions">
+    <button class="btn btn-ghost btn-sm" id="syncAllBtn">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H5.498a.75.75 0 0 0-.75.75v3.498a.75.75 0 0 0 1.5 0v-1.84l.311.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.46-.335Zm-9.12-3.348a5.5 5.5 0 0 1 9.199-2.466l.312.311H13.27a.75.75 0 0 0 0 1.5h3.498a.75.75 0 0 0 .75-.75V2.972a.75.75 0 0 0-1.5 0v1.84l-.311-.311a7 7 0 0 0-11.712 3.138.75.75 0 0 0 1.46.335Z" clip-rule="evenodd"/></svg>
+      Importar do device
+    </button>
+    <a href="/api/reports/employees.xlsx" class="btn btn-ghost btn-sm">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v9.19l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3.75 3.75a.75.75 0 0 1-1.06 0L5.72 11.53a.75.75 0 0 1 1.06-1.06l2.47 2.47V3.75A.75.75 0 0 1 10 3ZM3.5 15.25a.75.75 0 0 1 .75-.75h11.5a.75.75 0 0 1 0 1.5H4.25a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"/></svg>
+      Excel
+    </a>
+    <button class="btn btn-primary btn-sm" id="newEmployeeBtn">
+      + Novo Funcionário
+    </button>
+  </div>
+</div>
+
+<!-- Tabela -->
+<div class="panel">
+  <div class="table-wrapper" id="employeeTableWrapper">
+    <table class="table" id="employeeTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Departamento</th>
+          <th>Cargo</th>
+          <th>Turno</th>
+          <th>Face</th>
+          <th>Cartão</th>
+          <th>Status</th>
+          <th>Última Sync</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="employeeTableBody">
+        {% for emp in employees %}
+        <tr data-id="{{ emp.id }}">
+          <td class="font-mono text-sm">{{ emp.userid }}</td>
+          <td>
+            <div class="cell-primary">{{ emp.name or '—' }}</div>
+          </td>
+          <td class="text-sm">{{ emp.department }}</td>
+          <td class="text-sm">{% if emp.role == 1 %}Admin{% else %}Usuário{% endif %}</td>
+          <td class="text-sm">{{ emp.schedule }}</td>
+          <td>
+            {% if emp.has_face %}
+              <span class="badge badge-success">✓ Sim</span>
+            {% else %}
+              <span class="badge badge-neutral">—</span>
+            {% endif %}
+          </td>
+          <td class="text-sm font-mono">{{ emp.access_card_number or '—' }}</td>
+          <td>
+            {% if emp.sync_status == 'SUCCESS' %}
+              <span class="badge badge-success">Sincronizado</span>
+            {% elif emp.sync_status == 'PENDING' %}
+              <span class="badge badge-warning">Pendente</span>
+            {% elif emp.sync_status == 'ERROR' %}
+              <span class="badge badge-danger">Erro</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ emp.sync_status }}</span>
+            {% endif %}
+          </td>
+          <td class="text-sm text-muted">
+            {{ emp.last_synced_at | dt }}
+          </td>
+          <td>
+            <div class="action-btns">
+              <button class="btn btn-ghost btn-xs" onclick="editEmployee({{ emp.id }})" title="Editar">✏</button>
+              <button class="btn btn-ghost btn-xs" onclick="syncEmployee({{ emp.id }})" title="Sincronizar">⟳</button>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="empty-cell">
+            Nenhum funcionário cadastrado. <a href="#" onclick="openNewEmployeeModal()">Cadastrar agora</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginação -->
+  {% if pagination.pages > 1 %}
+  <div class="pagination">
+    {% if pagination.page > 1 %}
+      <a href="?page={{ pagination.page - 1 }}" class="page-btn">‹ Anterior</a>
+    {% endif %}
+    <span class="page-info">Página {{ pagination.page }} de {{ pagination.pages }} ({{ pagination.total }} registros)</span>
+    {% if pagination.page < pagination.pages %}
+      <a href="?page={{ pagination.page + 1 }}" class="page-btn">Próxima ›</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal: Novo / Editar Funcionário -->
+<div class="modal" id="employeeModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalTitle">Novo Funcionário</h2>
+      <button class="modal-close" onclick="closeModal('employeeModal')" aria-label="Fechar">×</button>
+    </div>
+    <form id="employeeForm" class="modal-body" enctype="multipart/form-data">
+      <input type="hidden" id="empId" name="empId" value="" />
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="f_userid">ID do Funcionário *</label>
+          <input type="text" id="f_userid" name="userid" required class="form-input" placeholder="ex: 42" />
+        </div>
+        <div class="form-group">
+          <label for="f_name">Nome</label>
+          <input type="text" id="f_name" name="name" class="form-input" placeholder="Nome completo" />
+        </div>
+        <div class="form-group">
+          <label for="f_department">Departamento</label>
+          <input type="number" id="f_department" name="department" class="form-input" value="0" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="f_schedule">Turno (ID)</label>
+          <input type="number" id="f_schedule" name="schedule" class="form-input" value="0" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="f_role">Perfil</label>
+          <select id="f_role" name="role" class="form-input">
+            <option value="0">Usuário</option>
+            <option value="1">Administrador</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="f_card">Cartão de Acesso</label>
+          <input type="text" id="f_card" name="access_card_number" class="form-input" placeholder="Número do cartão" />
+        </div>
+        <div class="form-group">
+          <label for="f_pass_times">Acessos permitidos</label>
+          <input type="number" id="f_pass_times" name="pass_times" class="form-input" value="-1" />
+          <span class="form-hint">-1 = ilimitado</span>
+        </div>
+        <div class="form-group">
+          <label for="f_password">Senha no device</label>
+          <input type="password" id="f_password" name="userpassword" class="form-input" placeholder="Opcional" autocomplete="new-password" />
+        </div>
+        <div class="form-group form-group-full">
+          <label for="f_photo">Foto facial</label>
+          <div class="photo-upload-area" id="photoUploadArea">
+            <div class="photo-preview-wrap" id="photoPreviewWrap" style="display:none">
+              <img id="photoPreview" src="" alt="Preview da foto" class="photo-preview-img" />
+              <button type="button" class="photo-remove-btn" onclick="removePhoto()" title="Remover foto">×</button>
+            </div>
+            <div class="photo-placeholder" id="photoPlaceholder">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="24" cy="18" r="8" stroke="#94a3b8" stroke-width="2"/>
+                <path d="M8 40c0-8.837 7.163-16 16-16s16 7.163 16 16" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span>Clique ou arraste uma foto aqui</span>
+              <span class="form-hint">JPG, PNG — a foto é enviada ao device como pic_large</span>
+            </div>
+            <input type="file" id="f_photo" name="photo" accept="image/*"
+                   style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%"
+                   onchange="previewPhoto(this)" />
+          </div>
+        </div>
+      </div>
+    </form>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('employeeModal')">Cancelar</button>
+      <button class="btn btn-primary" id="saveEmployeeBtn" onclick="saveEmployee()">Salvar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static('js/employees.js') }}"></script>
+{% endblock %}

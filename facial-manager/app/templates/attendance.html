@@ -1,0 +1,432 @@
+﻿{% extends "base.html" %}
+{% block title %}Presença — Pontix{% endblock %}
+{% block page_title %}Presença{% endblock %}
+
+{% block content %}
+
+<!-- Cards de status -->
+<div class="cards-grid cards-grid-sm">
+  <div class="card">
+    <div class="card-header"><span class="card-label">Total hoje</span></div>
+    <div class="card-value">{{ pagination.total }}</div>
+    <div class="card-meta">marcações em {{ today }}</div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-label">Presentes</span></div>
+    <div class="card-value">{{ today_status | selectattr("passed") | list | length }}</div>
+    <div class="card-meta">de {{ today_status | length }} cadastrados</div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-label">Aguardando</span></div>
+    <div class="card-value">{{ today_status | rejectattr("passed") | list | length }}</div>
+    <div class="card-meta">ainda não passaram</div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="toolbar-filters" style="flex-wrap:wrap;gap:0.5rem">
+    <input type="date" id="filterStart" class="form-input input-sm" value="{{ today }}" aria-label="Data inicial" />
+    <input type="date" id="filterEnd"   class="form-input input-sm" value="{{ today }}" aria-label="Data final" />
+    <input type="text" id="filterUser"  class="form-input input-sm" placeholder="ID ou nome" aria-label="Funcionário" />
+    <select id="filterType" class="select-sm" aria-label="Tipo de registro">
+      <option value="">Todos</option>
+      <option value="ENTRY">Entrada</option>
+      <option value="EXIT">Saída</option>
+    </select>
+    <button class="btn btn-primary btn-sm" onclick="applyFilters()">Filtrar</button>
+  </div>
+  <div class="toolbar-actions">
+    <button class="btn btn-ghost btn-sm" onclick="pollAttendance()">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H5.498a.75.75 0 0 0-.75.75v3.498a.75.75 0 0 0 1.5 0v-1.84l.311.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.46-.335Zm-9.12-3.348a5.5 5.5 0 0 1 9.199-2.466l.312.311H13.27a.75.75 0 0 0 0 1.5h3.498a.75.75 0 0 0 .75-.75V2.972a.75.75 0 0 0-1.5 0v1.84l-.311-.311a7 7 0 0 0-11.712 3.138.75.75 0 0 0 1.46.335Z" clip-rule="evenodd"/></svg>
+      Buscar no device
+    </button>
+    <button class="btn btn-ghost btn-sm" id="exportXlsxBtn">⬇ Excel</button>
+    <button class="btn btn-ghost btn-sm" id="exportCsvBtn">⬇ CSV</button>
+  </div>
+</div>
+
+<!-- Tabela de marcações -->
+<div class="panel">
+  <div class="table-wrapper">
+    <table class="table" id="attendanceTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Funcionário</th>
+          <th>Data</th>
+          <th>Hora</th>
+          <th>Tipo</th>
+          <th>Origem</th>
+        </tr>
+      </thead>
+      <tbody id="attendanceBody">
+        {% for rec in attendance %}
+        <tr>
+          <td class="text-sm font-mono">{{ rec.userid }}</td>
+          <td>
+            <div class="cell-primary">{{ rec.employee_name or rec.userid }}</div>
+          </td>
+          <td class="text-sm">{{ rec.attendance_date }}</td>
+          <td class="font-mono text-sm">{{ rec.attendance_time[:5] }}</td>
+          <td>
+            <span class="badge {% if rec.record_type == 'ENTRY' %}badge-success{% elif rec.record_type == 'EXIT' %}badge-info{% else %}badge-neutral{% endif %}">
+              {% if rec.record_type == 'ENTRY' %}Entrada{% elif rec.record_type == 'EXIT' %}Saída{% else %}—{% endif %}
+            </span>
+          </td>
+          <td class="text-sm text-muted">{{ rec.source }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="empty-cell">
+            Nenhuma marcação para este período. Tente buscar no device ou ajustar os filtros.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <div class="pagination">
+    {% if pagination.page > 1 %}
+      <a href="?page={{ pagination.page - 1 }}" class="page-btn">‹ Anterior</a>
+    {% endif %}
+    <span class="page-info">Página {{ pagination.page }} de {{ pagination.pages }} ({{ pagination.total }} registros)</span>
+    {% if pagination.page < pagination.pages %}
+      <a href="?page={{ pagination.page + 1 }}" class="page-btn">Próxima ›</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- ================================================================ -->
+<!-- Painel de Atestados Médicos                                       -->
+<!-- ================================================================ -->
+
+<div style="margin:2rem 0 1rem;display:flex;align-items:center;gap:12px">
+  <div style="flex:1;height:1px;background:var(--color-border,#e5e7eb)"></div>
+  <span style="font-size:13px;font-weight:600;color:var(--color-muted,#6b7280);white-space:nowrap">
+    📋 Atestados Médicos
+  </span>
+  <div style="flex:1;height:1px;background:var(--color-border,#e5e7eb)"></div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2 class="panel-title">Atestados &amp; Justificativas de Falta</h2>
+    <button class="btn btn-primary btn-sm" onclick="openNewCert()">+ Novo Atestado</button>
+  </div>
+  <p class="text-muted text-sm" style="margin:0 0 1rem">
+    Registre atestados médicos para justificar ausências. Eles aparecem automaticamente
+    no relatório XLSX de cada funcionário e são considerados nas colunas de faltas justificadas.
+  </p>
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Funcionário (ID)</th>
+          <th>Afastamento</th>
+          <th>Descrição / Diagnóstico</th>
+          <th>Arquivo</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="certTableBody">
+        <tr><td colspan="6" class="empty-cell">Carregando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal: Novo / Editar Atestado -->
+<div class="modal" id="certModal" role="dialog" aria-modal="true" aria-labelledby="certModalTitle">
+  <div class="modal-content" style="max-width:520px">
+    <div class="modal-header">
+      <h2 class="modal-title" id="certModalTitle">Novo Atestado</h2>
+      <button class="modal-close" onclick="closeModal('certModal')" aria-label="Fechar">×</button>
+    </div>
+    <form class="modal-body" onsubmit="saveCert(event)">
+      <input type="hidden" id="certId" />
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label for="certUserid">ID do Funcionário *</label>
+          <input type="text" id="certUserid" class="form-input"
+                 placeholder="Ex: 1" required />
+          <span class="form-hint">Use o mesmo ID cadastrado no dispositivo.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="certDate">Data do Atestado *</label>
+          <input type="date" id="certDate" class="form-input" required />
+        </div>
+
+        <div class="form-group">
+          <label for="certDays">Dias de Afastamento *</label>
+          <input type="number" id="certDays" class="form-input"
+                 min="1" max="365" value="1" required />
+          <span class="form-hint">Contados a partir da data acima.</span>
+        </div>
+
+        <div class="form-group form-group-full">
+          <label for="certDesc">Descrição / Diagnóstico</label>
+          <textarea id="certDesc" class="form-input" rows="3"
+                    placeholder="Ex: Gripe, repouso prescrito pelo médico…"
+                    style="resize:vertical"></textarea>
+        </div>
+
+        <div class="form-group form-group-full">
+          <label>Arquivo do Atestado
+            <span class="form-hint">(PDF ou imagem · máx 5 MB · opcional)</span>
+          </label>
+          <label for="certFileInput"
+                 class="btn btn-secondary btn-sm"
+                 style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+            📎 Selecionar arquivo
+          </label>
+          <input type="file" id="certFileInput"
+                 accept="image/*,application/pdf"
+                 style="display:none"
+                 onchange="onCertFileChange(this)" />
+          <span id="certFileName" class="form-hint"
+                style="margin-left:8px;font-style:italic"></span>
+        </div>
+
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;
+                  padding-top:1rem;border-top:1px solid var(--color-border,#e5e7eb)">
+        <button type="button" class="btn btn-ghost"
+                onclick="closeModal('certModal')">Cancelar</button>
+        <button type="submit" id="certSaveBtn" class="btn btn-primary">Salvar Atestado</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ------------------------------------------------------------------ */
+/* Filtros e exportação de marcações                                    */
+/* ------------------------------------------------------------------ */
+function applyFilters() {
+  const start = document.getElementById('filterStart').value;
+  const end   = document.getElementById('filterEnd').value;
+  const user  = document.getElementById('filterUser').value;
+  const type  = document.getElementById('filterType').value;
+  const params = new URLSearchParams({ start_date: start, end_date: end });
+  if (user)  params.set('userid', user);
+  if (type)  params.set('record_type', type);
+  window.location.href = '/presenca?' + params.toString();
+}
+
+async function pollAttendance() {
+  const start = document.getElementById('filterStart').value.replace(/-/g, '/');
+  const end   = document.getElementById('filterEnd').value.replace(/-/g, '/');
+  showToast('Buscando marcações no device…', 'info');
+  try {
+    const r = await fetch(`/api/attendance/poll?start_date=${start}&end_date=${end}`, { method: 'POST' });
+    const d = await r.json();
+    if (d.success) {
+      showToast(`${d.new_records} novos registros importados.`, 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      showToast('Erro: ' + (d.errors?.join(', ') || 'Desconhecido'), 'error');
+    }
+  } catch(e) { showToast('Falha na comunicação.', 'error'); }
+}
+
+document.getElementById('exportXlsxBtn').onclick = () => {
+  window.location.href = '/api/reports/attendance.xlsx?' + buildExportParams();
+};
+document.getElementById('exportCsvBtn').onclick = () => {
+  window.location.href = '/api/reports/attendance.csv?' + buildExportParams();
+};
+function buildExportParams() {
+  const start = document.getElementById('filterStart').value;
+  const end   = document.getElementById('filterEnd').value;
+  return new URLSearchParams({ start_date: start, end_date: end }).toString();
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Atestados médicos                                                    */
+/* ------------------------------------------------------------------ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadCertificates();
+  // Preenche data padrão do modal com hoje
+  const today = new Date().toISOString().slice(0, 10);
+  const certDate = document.getElementById('certDate');
+  if (certDate) certDate.value = today;
+});
+
+async function loadCertificates() {
+  const el = document.getElementById('certTableBody');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/certificates');
+    if (!r.ok) throw new Error('Erro ao carregar atestados');
+    const list = await r.json();
+
+    if (!list.length) {
+      el.innerHTML = `<tr><td colspan="6" class="empty-cell">
+        Nenhum atestado cadastrado. Clique em "+ Novo Atestado" para adicionar.
+      </td></tr>`;
+      return;
+    }
+
+    el.innerHTML = list.map((c, i) => {
+      const badgeFile = c.has_file
+        ? `<a href="/api/certificates/${c.id}/file" target="_blank"
+              class="badge badge-info"
+              style="cursor:pointer;text-decoration:none;" title="Baixar arquivo">
+             📎 ${_esc(c.file_name || 'Arquivo')}
+           </a>`
+        : `<span class="badge badge-neutral" style="color:#9ca3af">Sem arquivo</span>`;
+
+      const alt = i % 2 !== 0 ? 'style="background:var(--color-surface-alt,#f9fafb)"' : '';
+
+      return `<tr ${alt}>
+        <td class="text-sm">${_esc(c.cert_date)}</td>
+        <td class="text-sm font-mono">${_esc(c.userid)}</td>
+        <td class="text-sm" style="text-align:center">${c.days_off} dia(s)</td>
+        <td class="text-sm text-muted"
+            style="max-width:220px;white-space:normal;word-break:break-word">
+          ${_esc(c.description || '—')}
+        </td>
+        <td>${badgeFile}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn btn-ghost btn-xs" title="Editar"
+                    onclick="openEditCert(${c.id},'${_esc(c.userid)}','${_esc(c.cert_date)}',${c.days_off},'${_esc(c.description||'')}')">
+              ✏
+            </button>
+            <button class="btn btn-ghost btn-xs" title="Remover"
+                    style="color:#dc2626" onclick="deleteCert(${c.id})">
+              🗑
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<tr><td colspan="6" class="empty-cell text-danger">
+      Erro ao carregar: ${_esc(e.message)}
+    </td></tr>`;
+  }
+}
+
+function openNewCert() {
+  document.getElementById('certModalTitle').textContent = 'Novo Atestado';
+  document.getElementById('certId').value               = '';
+  document.getElementById('certUserid').value           = '';
+  document.getElementById('certDate').value             = new Date().toISOString().slice(0, 10);
+  document.getElementById('certDays').value             = '1';
+  document.getElementById('certDesc').value             = '';
+  document.getElementById('certFileInput').value        = '';
+  document.getElementById('certFileName').textContent   = '';
+  openModal('certModal');
+}
+
+function openEditCert(id, userid, certDate, days, desc) {
+  document.getElementById('certModalTitle').textContent = 'Editar Atestado';
+  document.getElementById('certId').value               = id;
+  document.getElementById('certUserid').value           = userid;
+  document.getElementById('certDate').value             = certDate;
+  document.getElementById('certDays').value             = days;
+  document.getElementById('certDesc').value             = desc;
+  document.getElementById('certFileInput').value        = '';
+  document.getElementById('certFileName').textContent   = '';
+  openModal('certModal');
+}
+
+function onCertFileChange(input) {
+  const file   = input.files[0];
+  const nameEl = document.getElementById('certFileName');
+  if (!file) { nameEl.textContent = ''; return; }
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('Arquivo muito grande (máx 5 MB).', 'error');
+    input.value = ''; nameEl.textContent = '';
+    return;
+  }
+  nameEl.textContent = file.name;
+}
+
+async function saveCert(e) {
+  e.preventDefault();
+  const btn    = document.getElementById('certSaveBtn');
+  btn.classList.add('loading'); btn.disabled = true;
+
+  const id     = document.getElementById('certId').value;
+  const userid = document.getElementById('certUserid').value.trim();
+  const cdate  = document.getElementById('certDate').value;
+  const days   = parseInt(document.getElementById('certDays').value) || 1;
+  const desc   = document.getElementById('certDesc').value.trim();
+  const file   = document.getElementById('certFileInput').files[0] || null;
+
+  try {
+    let certId = id ? parseInt(id) : null;
+
+    if (!certId) {
+      // Novo atestado
+      const fd = new FormData();
+      fd.append('userid',      userid);
+      fd.append('cert_date',   cdate);
+      fd.append('days_off',    days);
+      fd.append('description', desc);
+      if (file) fd.append('file', file);
+
+      const r = await fetch('/api/certificates', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'Erro ao criar atestado');
+      certId = d.certificate?.id;
+      showToast('Atestado cadastrado com sucesso!', 'success');
+    } else {
+      // Atualizar dados
+      const r = await fetch(`/api/certificates/${certId}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ cert_date: cdate, days_off: days, description: desc }),
+      });
+      if (!r.ok) throw new Error((await r.json()).detail || 'Erro ao atualizar');
+
+      // Atualizar arquivo se novo arquivo selecionado
+      if (file) {
+        const fd2 = new FormData();
+        fd2.append('file', file);
+        const r2 = await fetch(`/api/certificates/${certId}/file`, { method: 'PATCH', body: fd2 });
+        if (!r2.ok) showToast('Dados salvos, mas falhou ao anexar arquivo.', 'warning');
+      }
+      showToast('Atestado atualizado!', 'success');
+    }
+
+    closeModal('certModal');
+    loadCertificates();
+  } catch(err) {
+    showToast('Erro: ' + err.message, 'error');
+  } finally {
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+}
+
+async function deleteCert(id) {
+  if (!confirm('Remover este atestado? Esta ação não pode ser desfeita.')) return;
+  try {
+    const r = await fetch(`/api/certificates/${id}`, { method: 'DELETE' });
+    if (!r.ok) throw new Error((await r.json()).detail || 'Erro ao remover');
+    showToast('Atestado removido.', 'success');
+    loadCertificates();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function _esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+</script>
+{% endblock %}
