@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: pontix-api
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=debug
+      - DATABASE_URL=sqlite:///./facial.db
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - pontix-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: pontix-postgres
+    environment:
+      - POSTGRES_USER=pontix
+      - POSTGRES_PASSWORD=pontix_dev
+      - POSTGRES_DB=pontix_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pontix-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pontix"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  pontix-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
