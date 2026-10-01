@@ -146,8 +146,8 @@ app = FastAPI(
 )
 
 # Middleware de autenticação - OBRIGATÓRIO em todos endpoints
-from app.auth.middleware import auth_middleware
-app.middleware("http")(auth_middleware(app, require_auth=True))  # ✅ ATIVADO: Autentica todos os requests
+from app.auth.middleware import AuthMiddleware
+app.add_middleware(AuthMiddleware, require_auth=True)  # ✅ Middleware adicionado corretamente
 
 # Arquivos estáticos
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
