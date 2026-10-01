@@ -6,9 +6,7 @@ import os
 import sys
 from typing import AsyncGenerator
 
-from sqlalchemy import create_engine, inspect
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import sessionmaker
 
 logger = logging.getLogger(__name__)
 
@@ -76,28 +74,6 @@ AsyncSessionLocal = async_sessionmaker(
     engine,
     class_=AsyncSession,
     expire_on_commit=False,
-    autocommit=False,
-    autoflush=False,
-)
-
-
-# ---------------------------------------------------------------------------
-# Engine síncrono para migrações
-# ---------------------------------------------------------------------------
-
-SYNC_DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
-
-print(f"[DB] Sync URL: {SYNC_DATABASE_URL.split('@')[0]}@[REDACTED]", file=sys.stderr)
-
-sync_engine = create_engine(
-    SYNC_DATABASE_URL,
-    echo=False,
-    pool_pre_ping=True,
-    pool_recycle=3600,
-)
-
-SyncSessionLocal = sessionmaker(
-    bind=sync_engine,
     autocommit=False,
     autoflush=False,
 )
@@ -172,22 +148,3 @@ async def check_db_connection():
         logger.error(error_msg)
         print(f"[DB] {error_msg}", file=sys.stderr)
         return False
-
-
-# ---------------------------------------------------------------------------
-# Migrations (alembic compatible)
-# ---------------------------------------------------------------------------
-
-def get_migration_context():
-    """
-    Retorna contexto para Alembic (se usar)
-    """
-    from alembic.config import Config
-    from alembic.script import ScriptDirectory
-    from alembic.runtime.migration import MigrationContext
-    
-    config = Config("alembic.ini")
-    script = ScriptDirectory.from_config(config)
-    mc = MigrationContext.configure(sync_engine)
-    
-    return config, script, mc
