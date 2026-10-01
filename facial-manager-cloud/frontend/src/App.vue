@@ -1,88 +1,46 @@
 <template>
   <div id="app">
-    <nav class="navbar">
-      <div class="navbar-brand">
-        <h1>{{ title }}</h1>
-      </div>
-      <ul class="navbar-menu">
-        <li><router-link to="/accounting">Contador</router-link></li>
-        <li><router-link to="/owner">Proprietário</router-link></li>
-        <li><a href="#" @click="logout">Sair</a></li>
-      </ul>
-    </nav>
+    <!-- Navigation (mostrar apenas se tiver token) -->
+    <Navigation v-if="isLoggedIn" />
     
-    <div class="container">
-      <router-view />
-    </div>
+    <!-- Router view -->
+    <router-view />
   </div>
 </template>
 
 <script>
+import Navigation from './components/Navigation.vue'
+
 export default {
   name: 'App',
-  data() {
-    return {
-      title: 'Pontix Cloud'
-    }
+  components: {
+    Navigation
   },
-  methods: {
-    logout() {
-      // Limpar token e redirecionar para login
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('user_id')
-      // Em um app real, redirecionar para /login
-      console.log('Logout realizado')
-      window.location.href = '/login'
+  computed: {
+    isLoggedIn() {
+      return !!localStorage.getItem('access_token')
     }
   }
 }
 </script>
 
-<style scoped>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-.navbar {
-  background-color: #2c3e50;
-  color: white;
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.navbar-brand h1 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.navbar-menu {
-  display: flex;
-  list-style: none;
-  gap: 2rem;
+<style>
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
-.navbar-menu a {
-  color: white;
-  text-decoration: none;
-  transition: opacity 0.3s;
+#app {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fa;
+  min-height: 100vh;
 }
 
-.navbar-menu a:hover {
-  opacity: 0.7;
-}
-
-.container {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+body {
+  margin: 0;
+  padding: 0;
 }
 </style>
