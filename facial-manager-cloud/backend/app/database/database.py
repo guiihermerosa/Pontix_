@@ -19,32 +19,25 @@ logger = logging.getLogger(__name__)
 # Engine assíncrono para Supabase
 # ---------------------------------------------------------------------------
 
-# URL de conexão assíncrona - vem de DATABASE_URL env var ou constrói da SUPABASE
+# URL de conexão assíncrona - vem de DATABASE_URL env var
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-if not DATABASE_URL:
-    # Construir a partir de SUPABASE se DATABASE_URL não existir
-    if settings.SUPABASE_URL and settings.SUPABASE_KEY:
-        try:
-            # Formato esperado: postgres://user:password@host:port/database
-            # Converte para asyncpg
-            sync_url = settings.SUPABASE_URL
-            if sync_url.startswith("postgresql://"):
-                DATABASE_URL = sync_url.replace("postgresql://", "postgresql+asyncpg://")
-            elif sync_url.startswith("postgres://"):
-                DATABASE_URL = sync_url.replace("postgres://", "postgresql+asyncpg://")
-            else:
-                DATABASE_URL = f"postgresql+asyncpg://{sync_url.split('://')[-1]}"
-        except Exception as e:
-            logger.warning(f"Erro ao construir DATABASE_URL de SUPABASE_URL: {e}")
-            DATABASE_URL = None
+logger.info(f"[DEBUG] DATABASE_URL from env: {DATABASE_URL[:50] if DATABASE_URL else 'NOT SET'}...")
 
-# Fallback se nada funcionar
 if not DATABASE_URL:
-    logger.warning("DATABASE_URL não configurado. Usando SQLite de fallback.")
-    DATABASE_URL = "sqlite+aiosqlite:///./data/pontix_cloud.db"
+    logger.error("❌ DATABASE_URL não está configurado no ambiente!")
+    raise ValueError(
+        "DATABASE_URL environment variable is required. "
+        "Set it in Render settings with format: "
+        "postgresql+asyncpg://user:password@host:port/database"
+    )
 
-logger.info(f"Usando DATABASE_URL: {DATABASE_URL[:50]}...")
+# Garantir que tá usando asyncpg
+if not "asyncpg" in DATABASE_URL and "postgresql" in DATABASE_URL:
+    logger.warning(f"⚠️ DATABASE_URL não tem +asyncpg, convertendo...")
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+    
+logger.info(f"✓ Usando DATABASE_URL: {DATABASE_URL.split('@')[0]}@...")  # Log sem senha
 
 # Engine assíncrono
 engine = create_async_engine(
