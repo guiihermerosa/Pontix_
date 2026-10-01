@@ -3,51 +3,52 @@ Configuração de conexão com Supabase PostgreSQL para Pontix Cloud.
 """
 import logging
 import os
+import sys
 from typing import AsyncGenerator
 
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import sessionmaker
 
-from app.config import settings
-from app.database.models import Base
-
 logger = logging.getLogger(__name__)
 
-
-# ---------------------------------------------------------------------------
-# Engine assíncrono para Supabase
-# ---------------------------------------------------------------------------
-
-# URL de conexão assíncrona - vem de DATABASE_URL env var
+# ⚠️ IMPORTANTE: Ler DATABASE_URL ANTES de qualquer outro import
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-logger.info(f"[DEBUG] DATABASE_URL from env: {DATABASE_URL[:50] if DATABASE_URL else 'NOT SET'}...")
+print(f"[STARTUP] DATABASE_URL={DATABASE_URL[:50] if DATABASE_URL else 'NOT SET'}...", file=sys.stderr)
 
 if not DATABASE_URL:
-    logger.error("❌ DATABASE_URL não está configurado no ambiente!")
-    raise ValueError(
-        "DATABASE_URL environment variable is required. "
-        "Set it in Render settings with format: "
+    raise RuntimeError(
+        "❌ ERRO CRÍTICO: DATABASE_URL não está configurado!\n"
+        "Configure a variável de ambiente DATABASE_URL no Render:\n"
         "postgresql+asyncpg://user:password@host:port/database"
     )
 
-# Garantir que tá usando asyncpg
-if not "asyncpg" in DATABASE_URL and "postgresql" in DATABASE_URL:
-    logger.warning(f"⚠️ DATABASE_URL não tem +asyncpg, convertendo...")
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
-    
-logger.info(f"✓ Usando DATABASE_URL: {DATABASE_URL.split('@')[0]}@...")  # Log sem senha
+if "asyncpg" not in DATABASE_URL:
+    raise RuntimeError(
+        f"❌ ERRO: DATABASE_URL deve usar +asyncpg!\n"
+        f"Recebido: {DATABASE_URL.split('@')[0]}@...\n"
+        f"Esperado: postgresql+asyncpg://user:password@host:port/database"
+    )
 
+print(f"[STARTUP] ✓ DATABASE_URL configurado corretamente", file=sys.stderr)
+
+from app.database.models import Base
+
+# ---------------------------------------------------------------------------
 # Engine assíncrono
+# ---------------------------------------------------------------------------
+
 engine = create_async_engine(
     DATABASE_URL,
-    echo=settings.DEBUG,
+    echo=False,
     pool_pre_ping=True,
     pool_recycle=3600,
     pool_size=10,
     max_overflow=20,
 )
+
+logger.info(f"✓ Engine assíncrono criado: {DATABASE_URL.split('@')[0]}@...")
 
 # Session factory assíncrona
 AsyncSessionLocal = async_sessionmaker(
@@ -60,19 +61,14 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 # ---------------------------------------------------------------------------
-# Engine síncrono para migrações e tarefas administrativas
+# Engine síncrono para migrações
 # ---------------------------------------------------------------------------
 
-SYNC_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/pontix_cloud.db")
-
-if SYNC_DATABASE_URL.startswith("postgresql+asyncpg://"):
-    SYNC_DATABASE_URL = SYNC_DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
-elif SYNC_DATABASE_URL.startswith("postgresql://"):
-    SYNC_DATABASE_URL = SYNC_DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://")
+SYNC_DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
 
 sync_engine = create_engine(
     SYNC_DATABASE_URL,
-    echo=settings.DEBUG,
+    echo=False,
     pool_pre_ping=True,
     pool_recycle=3600,
 )
