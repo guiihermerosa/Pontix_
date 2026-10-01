@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Pontix"
     APP_VERSION: str = "2.0.0"
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
+    REQUIRE_AUTH: bool = os.getenv("REQUIRE_AUTH", "False").lower() == "true"
     
     # Supabase
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
