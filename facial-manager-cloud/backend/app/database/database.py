@@ -119,7 +119,8 @@ async def init_db():
         error_msg = f"✗ Erro ao inicializar banco de dados: {e}"
         logger.error(error_msg)
         print(f"[DB] {error_msg}", file=sys.stderr)
-        raise
+        # Não relança o erro - deixa a app rodar mesmo sem DB
+        print(f"[DB] ⚠️ A aplicação continuará rodando sem acesso ao banco", file=sys.stderr)
 
 
 async def drop_all_tables():
