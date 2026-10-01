@@ -704,3 +704,118 @@ function _esc(str) {
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+
+/* ================================================================== */
+/* Cloud Sync Configuration                                            */
+/* ================================================================== */
+
+async function loadCloudSyncSettings() {
+  try {
+    const r = await fetch('/api/settings/cloud-sync');
+    if (!r.ok) return;
+    const d = await r.json();
+    
+    const urlEl = document.getElementById('c_url');
+    const enabledEl = document.getElementById('c_enabled');
+    
+    if (urlEl && d.cloud_sync_url) urlEl.value = d.cloud_sync_url;
+    if (enabledEl) enabledEl.value = d.cloud_sync_enabled ? 'true' : 'false';
+  } catch { /* silencioso */ }
+}
+
+function toggleCloudKeyVisibility() {
+  const inp = document.getElementById('c_api_key');
+  if (!inp) return;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+async function testCloudConnection() {
+  const btn = document.getElementById('testCloudBtn');
+  const resultEl = document.getElementById('testCloudResult');
+  
+  btn.classList.add('loading');
+  btn.disabled = true;
+  resultEl.innerHTML = '<span class="text-muted text-sm">Testando…</span>';
+  
+  try {
+    const r = await fetch('/api/settings/test-cloud-sync', { method: 'POST' });
+    const d = await r.json();
+    
+    if (d.connected) {
+      resultEl.innerHTML = `
+        <div style="color:#059669;padding:10px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px">
+          <strong>✓ Conectado com sucesso!</strong><br>
+          <span style="font-size:13px">URL: ${_esc(d.cloud_url)}</span>
+        </div>
+      `;
+      showToast('Conectado ao sistema cloud!', 'success');
+    } else {
+      resultEl.innerHTML = `
+        <div style="color:#dc2626;padding:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px">
+          <strong>✕ Falha na conexão</strong><br>
+          <span style="font-size:13px">${_esc(d.error || 'Erro desconhecido')}</span>
+        </div>
+      `;
+      showToast('Erro: ' + (d.error || 'Não foi possível conectar'), 'error');
+    }
+  } catch (e) {
+    resultEl.innerHTML = `
+      <div style="color:#dc2626;padding:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px">
+        <strong>✕ Erro na requisição</strong><br>
+        <span style="font-size:13px">${_esc(e.message)}</span>
+      </div>
+    `;
+    showToast('Erro: ' + e.message, 'error');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+// Adicionar listener para form de cloud sync
+document.addEventListener('DOMContentLoaded', () => {
+  const cloudForm = document.getElementById('cloudSyncForm');
+  if (cloudForm) {
+    cloudForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = cloudForm.querySelector('[type=submit]');
+      btn.classList.add('loading');
+      btn.disabled = true;
+      
+      const fd = new FormData(cloudForm);
+      const data = {
+        resend_api_key: fd.get('resend_api_key') || undefined,
+        cloud_sync_url: fd.get('cloud_sync_url') || undefined,
+        cloud_sync_enabled: fd.get('cloud_sync_enabled') === 'true'
+      };
+      
+      // Remove undefined values
+      Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
+      
+      try {
+        const r = await fetch('/api/settings/cloud-sync', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        const d = await r.json();
+        if (r.ok) {
+          showToast('Configuração cloud salva!', 'success');
+          loadCloudSyncSettings();
+        } else {
+          showToast(d.detail || 'Erro ao salvar', 'error');
+        }
+      } catch (e) {
+        showToast('Erro de comunicação: ' + e.message, 'error');
+      } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    });
+    
+    // Load settings on page load
+    loadCloudSyncSettings();
+  }
+});

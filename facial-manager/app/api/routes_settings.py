@@ -155,6 +155,151 @@ async def test_conn(
 
 
 # ---------------------------------------------------------------------------
+# Configurações de Sincronização com Cloud
+# ---------------------------------------------------------------------------
+
+@router.get("/api/settings/cloud-sync")
+async def get_cloud_sync_settings(db: Session = Depends(get_db)):
+    """
+    Retorna configurações de sincronização com sistema cloud.
+    """
+    def _get_setting(key: str, default: str = "") -> str:
+        row = db.query(Setting).filter(Setting.key == key).first()
+        return row.value if row and row.value else default
+    
+    return {
+        "resend_api_key_set": bool(_get_setting("resend_api_key", "")),
+        "cloud_sync_url": _get_setting("cloud_sync_url", ""),
+        "cloud_sync_enabled": _get_setting("cloud_sync_enabled", "false").lower() == "true",
+    }
+
+
+@router.put("/api/settings/cloud-sync")
+async def update_cloud_sync_settings(
+    data: dict,
+    db: Session = Depends(get_db)
+):
+    """
+    Atualiza configurações de sincronização com sistema cloud.
+    
+    Body JSON:
+    {
+        "resend_api_key": "re_xxxxx",  # Opcional
+        "cloud_sync_url": "https://cloud.example.com",  # Opcional
+        "cloud_sync_enabled": true  # Opcional
+    }
+    """
+    resend_api_key = data.get("resend_api_key")
+    cloud_sync_url = data.get("cloud_sync_url")
+    cloud_sync_enabled = data.get("cloud_sync_enabled")
+    
+    # Atualiza resend_api_key se fornecido
+    if resend_api_key is not None:
+        row = db.query(Setting).filter(Setting.key == "resend_api_key").first()
+        if row:
+            row.value = resend_api_key
+        else:
+            db.add(Setting(key="resend_api_key", value=resend_api_key))
+    
+    # Atualiza cloud_sync_url se fornecido
+    if cloud_sync_url is not None:
+        row = db.query(Setting).filter(Setting.key == "cloud_sync_url").first()
+        if row:
+            row.value = cloud_sync_url
+        else:
+            db.add(Setting(key="cloud_sync_url", value=cloud_sync_url))
+    
+    # Atualiza cloud_sync_enabled se fornecido
+    if cloud_sync_enabled is not None:
+        row = db.query(Setting).filter(Setting.key == "cloud_sync_enabled").first()
+        if row:
+            row.value = str(cloud_sync_enabled).lower()
+        else:
+            db.add(Setting(key="cloud_sync_enabled", value=str(cloud_sync_enabled).lower()))
+    
+    db.commit()
+    return {
+        "success": True,
+        "message": "Configurações de sincronização atualizadas"
+    }
+
+
+@router.post("/api/settings/test-cloud-sync")
+async def test_cloud_sync(db: Session = Depends(get_db)):
+    """
+    Testa conexão com sistema cloud.
+    """
+    import requests
+    
+    def _get_setting(key: str, default: str = "") -> str:
+        row = db.query(Setting).filter(Setting.key == key).first()
+        return row.value if row and row.value else default
+    
+    cloud_sync_url = _get_setting("cloud_sync_url", "").rstrip("/")
+    
+    if not cloud_sync_url:
+        return {
+            "connected": False,
+            "error": "URL do sistema cloud não configurada"
+        }
+    
+    try:
+        response = requests.get(f"{cloud_sync_url}/health", timeout=10)
+        if response.status_code == 200:
+            return {
+                "connected": True,
+                "cloud_url": cloud_sync_url,
+                "message": "Conectado ao sistema cloud"
+            }
+        else:
+            return {
+                "connected": False,
+                "cloud_url": cloud_sync_url,
+                "error": f"Sistema cloud retornou status {response.status_code}"
+            }
+    except requests.exceptions.ConnectionError:
+        return {
+            "connected": False,
+            "cloud_url": cloud_sync_url,
+            "error": "Não foi possível conectar ao sistema cloud. Verifique a URL e conexão."
+        }
+    except requests.exceptions.Timeout:
+        return {
+            "connected": False,
+            "cloud_url": cloud_sync_url,
+            "error": "Timeout ao conectar ao sistema cloud"
+        }
+    except Exception as exc:
+        return {
+            "connected": False,
+            "cloud_url": cloud_sync_url,
+            "error": f"Erro ao testar conexão: {str(exc)}"
+        }
+
+
+@router.post("/api/sync/cloud")
+async def trigger_cloud_sync(db: Session = Depends(get_db)):
+    """
+    Dispara sincronização manual com sistema cloud.
+    """
+    from app.services.cloud_sync_service import run_full_cloud_sync
+    
+    try:
+        result = run_full_cloud_sync()
+        return {
+            "success": result["success"],
+            "employees_synced": result["employees"]["synced_count"],
+            "attendance_synced": result["attendance"]["synced_count"],
+            "timestamp": result["timestamp"]
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+# ---------------------------------------------------------------------------
 # Configurações do dispositivo — leitura e escrita via FacialClient
 # ---------------------------------------------------------------------------
 

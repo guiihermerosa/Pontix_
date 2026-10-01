@@ -343,6 +343,62 @@
         </div>
       </form>
     </div>
+
+    <!-- Cloud Sync Section -->
+    <div class="settings-section" style="margin-top:2rem;padding-top:2rem;border-top:1px solid var(--color-border)">
+      <h3 class="settings-section-title">
+        <span style="margin-right:6px">☁️</span> Sincronização com Sistema Cloud
+      </h3>
+      <p class="text-muted text-sm" style="margin-bottom:1rem">
+        Configure a URL do seu sistema cloud (Supabase) para sincronizar dados de forma automática.
+      </p>
+
+      <form id="cloudSyncForm" class="settings-form" onsubmit="return false">
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1">
+            <label for="c_url">URL do Sistema Cloud</label>
+            <input type="url" id="c_url" name="cloud_sync_url" class="form-input"
+                   placeholder="https://seu-projeto.supabase.co" />
+            <span class="form-hint">URL base do seu sistema cloud (ex: https://seu-app.vercel.app)</span>
+          </div>
+          <div class="form-group">
+            <label for="c_api_key">API Key Cloud</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="password" id="c_api_key" name="cloud_api_key" class="form-input"
+                     placeholder="sk_xxxxxxxxxxxxxxxxxxxx" autocomplete="new-password"
+                     style="flex:1" />
+              <button type="button" class="btn btn-ghost btn-sm" onclick="toggleCloudKeyVisibility()"
+                      id="toggleCloudKeyBtn" title="Mostrar/ocultar">👁</button>
+            </div>
+            <span class="form-hint">Deixe vazio se a API Cloud é pública</span>
+          </div>
+          <div class="form-group">
+            <label for="c_enabled">Sincronização automática</label>
+            <select id="c_enabled" name="cloud_sync_enabled" class="form-input">
+              <option value="false">Desativada</option>
+              <option value="true">Ativada</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Test Connection -->
+        <div class="settings-section" style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--color-border)">
+          <h3 class="settings-section-title">Testar conexão</h3>
+          <p class="text-muted text-sm" style="margin-bottom:1rem">
+            Valide se o sistema local consegue acessar a API cloud.
+          </p>
+          <button type="button" class="btn btn-secondary" onclick="testCloudConnection()"
+                  id="testCloudBtn" style="height:40px">
+            🔗 Testar conexão com cloud
+          </button>
+          <div id="testCloudResult" style="margin-top:12px"></div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Salvar configuração cloud</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
