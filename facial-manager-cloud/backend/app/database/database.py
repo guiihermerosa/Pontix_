@@ -2,6 +2,7 @@
 Configuração de conexão com Supabase PostgreSQL para Pontix Cloud.
 """
 import logging
+import os
 from typing import AsyncGenerator
 
 from sqlalchemy import create_engine, inspect
@@ -18,13 +19,32 @@ logger = logging.getLogger(__name__)
 # Engine assíncrono para Supabase
 # ---------------------------------------------------------------------------
 
-# URL de conexão assíncrona com PostgreSQL
-DATABASE_URL = f"postgresql+asyncpg://{settings.SUPABASE_URL.split('://')[1].split(':')[0]}:{settings.SUPABASE_KEY}@{settings.SUPABASE_URL.split('://')[1]}/postgres"
+# URL de conexão assíncrona - vem de DATABASE_URL env var ou constrói da SUPABASE
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Fallback se SUPABASE_URL não estiver configurado
-if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
-    logger.warning("SUPABASE_URL ou SUPABASE_KEY não configurados. Usando SQLite de fallback.")
+if not DATABASE_URL:
+    # Construir a partir de SUPABASE se DATABASE_URL não existir
+    if settings.SUPABASE_URL and settings.SUPABASE_KEY:
+        try:
+            # Formato esperado: postgres://user:password@host:port/database
+            # Converte para asyncpg
+            sync_url = settings.SUPABASE_URL
+            if sync_url.startswith("postgresql://"):
+                DATABASE_URL = sync_url.replace("postgresql://", "postgresql+asyncpg://")
+            elif sync_url.startswith("postgres://"):
+                DATABASE_URL = sync_url.replace("postgres://", "postgresql+asyncpg://")
+            else:
+                DATABASE_URL = f"postgresql+asyncpg://{sync_url.split('://')[-1]}"
+        except Exception as e:
+            logger.warning(f"Erro ao construir DATABASE_URL de SUPABASE_URL: {e}")
+            DATABASE_URL = None
+
+# Fallback se nada funcionar
+if not DATABASE_URL:
+    logger.warning("DATABASE_URL não configurado. Usando SQLite de fallback.")
     DATABASE_URL = "sqlite+aiosqlite:///./data/pontix_cloud.db"
+
+logger.info(f"Usando DATABASE_URL: {DATABASE_URL[:50]}...")
 
 # Engine assíncrono
 engine = create_async_engine(
@@ -50,13 +70,12 @@ AsyncSessionLocal = async_sessionmaker(
 # Engine síncrono para migrações e tarefas administrativas
 # ---------------------------------------------------------------------------
 
-# Fallback para URL síncrona se precisar
-SYNC_DATABASE_URL = settings.SUPABASE_URL or "sqlite:///./data/pontix_cloud.db"
+SYNC_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/pontix_cloud.db")
 
-if SYNC_DATABASE_URL.startswith("postgresql://"):
-    SYNC_DATABASE_URL = SYNC_DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://")
-elif SYNC_DATABASE_URL.startswith("postgresql+asyncpg://"):
+if SYNC_DATABASE_URL.startswith("postgresql+asyncpg://"):
     SYNC_DATABASE_URL = SYNC_DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+elif SYNC_DATABASE_URL.startswith("postgresql://"):
+    SYNC_DATABASE_URL = SYNC_DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://")
 
 sync_engine = create_engine(
     SYNC_DATABASE_URL,
