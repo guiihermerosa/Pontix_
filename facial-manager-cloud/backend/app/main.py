@@ -20,7 +20,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.database import init_db, check_db_connection
 from app.auth import AuthMiddleware
 from app.api import routes_auth, routes_accounting, routes_owner, routes_sync
 
@@ -73,21 +72,28 @@ logger = logging.getLogger("main")
 
 
 # ---------------------------------------------------------------------------
-# Lifespan
+# Lifespan - Lazy load database
 # ---------------------------------------------------------------------------
+
+db_initialized = False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global db_initialized
     logger.info("=" * 60)
     logger.info("  Pontix Cloud iniciando…")
     logger.info("=" * 60)
     
-    # Inicializa banco de dados
+    # Inicializa banco de dados com tratamento de erro
     try:
+        from app.database import init_db, check_db_connection
         await init_db()
         await check_db_connection()
+        db_initialized = True
     except Exception as e:
-        logger.error(f"Erro ao inicializar banco de dados: {e}")
+        logger.error(f"⚠️ Erro ao inicializar banco de dados: {e}")
+        logger.error("A aplicação continuará rodando, mas sem acesso ao DB")
+        db_initialized = False
     
     yield  # Aplicação rodando
     
@@ -144,7 +150,8 @@ async def root():
 async def health():
     return {
         "status": "ok",
-        "service": "pontix-cloud"
+        "service": "pontix-cloud",
+        "db_connected": db_initialized
     }
 
 
