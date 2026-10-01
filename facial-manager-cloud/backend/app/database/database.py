@@ -15,23 +15,36 @@ logger = logging.getLogger(__name__)
 # ⚠️ IMPORTANTE: Ler DATABASE_URL ANTES de qualquer outro import
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-print(f"[STARTUP] DATABASE_URL={DATABASE_URL[:50] if DATABASE_URL else 'NOT SET'}...", file=sys.stderr)
+# Debug detalhado
+print(f"\n{'='*60}", file=sys.stderr)
+print(f"[DB] Inicializando configuração de banco de dados", file=sys.stderr)
+print(f"[DB] DATABASE_URL presente: {DATABASE_URL is not None}", file=sys.stderr)
+if DATABASE_URL:
+    # Mostra URL sem senha
+    parts = DATABASE_URL.split('@')
+    print(f"[DB] URL sem senha: {parts[0]}@[REDACTED]", file=sys.stderr)
+    print(f"[DB] Host: {parts[1] if len(parts) > 1 else 'N/A'}", file=sys.stderr)
+print(f"{'='*60}\n", file=sys.stderr)
 
 if not DATABASE_URL:
-    raise RuntimeError(
+    error_msg = (
         "❌ ERRO CRÍTICO: DATABASE_URL não está configurado!\n"
         "Configure a variável de ambiente DATABASE_URL no Render:\n"
         "postgresql+asyncpg://user:password@host:port/database"
     )
+    print(f"[DB] {error_msg}", file=sys.stderr)
+    raise RuntimeError(error_msg)
 
 if "asyncpg" not in DATABASE_URL:
-    raise RuntimeError(
+    error_msg = (
         f"❌ ERRO: DATABASE_URL deve usar +asyncpg!\n"
-        f"Recebido: {DATABASE_URL.split('@')[0]}@...\n"
+        f"Recebido: {DATABASE_URL.split('@')[0]}@[REDACTED]\n"
         f"Esperado: postgresql+asyncpg://user:password@host:port/database"
     )
+    print(f"[DB] {error_msg}", file=sys.stderr)
+    raise RuntimeError(error_msg)
 
-print(f"[STARTUP] ✓ DATABASE_URL configurado corretamente", file=sys.stderr)
+print(f"[DB] ✓ DATABASE_URL configurado corretamente com asyncpg", file=sys.stderr)
 
 from app.database.models import Base
 
@@ -39,16 +52,24 @@ from app.database.models import Base
 # Engine assíncrono
 # ---------------------------------------------------------------------------
 
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,
-    pool_pre_ping=True,
-    pool_recycle=3600,
-    pool_size=10,
-    max_overflow=20,
-)
+print(f"[DB] Criando engine assíncrono...", file=sys.stderr)
 
-logger.info(f"✓ Engine assíncrono criado: {DATABASE_URL.split('@')[0]}@...")
+try:
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=False,
+        pool_pre_ping=True,
+        pool_recycle=3600,
+        pool_size=10,
+        max_overflow=20,
+    )
+    print(f"[DB] ✓ Engine assíncrono criado com sucesso", file=sys.stderr)
+except Exception as e:
+    error_msg = f"❌ Erro ao criar engine: {type(e).__name__}: {e}"
+    print(f"[DB] {error_msg}", file=sys.stderr)
+    raise
+
+logger.info(f"✓ Engine assíncrono criado com sucesso")
 
 # Session factory assíncrona
 AsyncSessionLocal = async_sessionmaker(
@@ -65,6 +86,8 @@ AsyncSessionLocal = async_sessionmaker(
 # ---------------------------------------------------------------------------
 
 SYNC_DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+
+print(f"[DB] Sync URL: {SYNC_DATABASE_URL.split('@')[0]}@[REDACTED]", file=sys.stderr)
 
 sync_engine = create_engine(
     SYNC_DATABASE_URL,
@@ -111,11 +134,15 @@ async def init_db():
     Execute uma única vez na inicialização da aplicação.
     """
     try:
+        print(f"[DB] Testando conexão e criando tabelas...", file=sys.stderr)
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("✓ Banco de dados inicializado com sucesso")
+        print(f"[DB] ✓ Banco de dados inicializado", file=sys.stderr)
     except Exception as e:
-        logger.error(f"✗ Erro ao inicializar banco de dados: {e}")
+        error_msg = f"✗ Erro ao inicializar banco de dados: {e}"
+        logger.error(error_msg)
+        print(f"[DB] {error_msg}", file=sys.stderr)
         raise
 
 
@@ -134,12 +161,16 @@ async def check_db_connection():
     Verifica a conexão com o banco de dados.
     """
     try:
+        print(f"[DB] Verificando conexão...", file=sys.stderr)
         async with engine.begin() as conn:
-            result = await conn.execute("SELECT 1")
+            result = await conn.exec_driver_sql("SELECT 1")
             logger.info("✓ Conexão com banco de dados OK")
+            print(f"[DB] ✓ Conexão com banco de dados OK", file=sys.stderr)
             return True
     except Exception as e:
-        logger.error(f"✗ Erro de conexão com banco de dados: {e}")
+        error_msg = f"✗ Erro de conexão com banco de dados: {e}"
+        logger.error(error_msg)
+        print(f"[DB] {error_msg}", file=sys.stderr)
         return False
 
 
