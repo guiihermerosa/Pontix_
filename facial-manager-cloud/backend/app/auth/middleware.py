@@ -6,7 +6,7 @@ from typing import Optional, Callable
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Request, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from fastapi.security import HTTPBearer
 from starlette.middleware.base import BaseHTTPMiddleware
 from jose import JWTError, jwt
 
