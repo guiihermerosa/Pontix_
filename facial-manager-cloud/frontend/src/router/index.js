@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../pages/Login.vue'
+import SignUp from '../pages/SignUp.vue'
 import AccountingDashboard from '../pages/AccountingDashboard.vue'
 import OwnerDashboard from '../pages/OwnerDashboard.vue'
 
@@ -8,6 +9,12 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/signup',
+    name: 'SignUp',
+    component: SignUp,
     meta: { requiresAuth: false }
   },
   {
@@ -56,8 +63,8 @@ router.beforeEach((to, from, next) => {
       }
       return
     }
-  } else if (to.path === '/login' && token) {
-    // Se já tá logado e tenta acessar login, redireciona para dashboard
+  } else if ((to.path === '/login' || to.path === '/signup') && token) {
+    // Se já tá logado e tenta acessar login/signup, redireciona para dashboard
     next('/accounting')
     return
   }

@@ -47,7 +47,7 @@
 
         <!-- Footer -->
         <div class="login-footer">
-          <p>Primeira vez aqui? <a href="#signup">Criar conta</a></p>
+          <p>Primeira vez aqui? <router-link to="/signup">Criar conta</router-link></p>
         </div>
       </div>
 
@@ -104,17 +104,10 @@ export default {
 
         // Armazenar token
         localStorage.setItem('access_token', response.data.access_token)
-        localStorage.setItem('user_role', response.data.role)
+        localStorage.setItem('user_role', 'accounting') // Role padrão é accounting
 
-        // Redirecionar baseado no role
-        const role = response.data.role
-        if (role === 'owner') {
-          this.$router.push('/owner')
-        } else if (role === 'accounting') {
-          this.$router.push('/accounting')
-        } else {
-          this.$router.push('/accounting')
-        }
+        // Redirecionar baseado no role (por enquanto usa accounting como padrão)
+        this.$router.push('/accounting')
       } catch (err) {
         console.error('Erro ao fazer login:', err)
         this.error = err.response?.data?.detail || 'Erro ao fazer login. Verifique suas credenciais.'
