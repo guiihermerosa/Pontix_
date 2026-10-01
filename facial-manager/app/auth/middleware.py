@@ -180,7 +180,7 @@ async def get_current_company(request: Request, company_id: Optional[UUID] = Non
     
     # Obtém acesso do usuário à empresa
     from app.database.database import SessionLocal
-    from app.database.models_supabase import CompanyUser
+    from app.database.models_cloud import CompanyUser
     
     db = SessionLocal()
     try:

@@ -15,7 +15,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
-from app.database.models_supabase import (
+from app.database.models_cloud import (
     Base,
     Company,
     EmployeeSupabase,

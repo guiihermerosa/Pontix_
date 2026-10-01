@@ -209,7 +209,7 @@ def check_permission(
         # Obtém role do usuário na empresa
         if company_id:
             from app.database.database import SessionLocal
-            from app.database.models_supabase import CompanyUser
+            from app.database.models_cloud import CompanyUser
             
             db = SessionLocal()
             try:
@@ -305,7 +305,7 @@ def get_user_companies(user_id: str) -> List[Dict[str, Any]]:
         Lista de empresas com roles
     """
     from app.database.database import SessionLocal
-    from app.database.models_supabase import CompanyUser, Company
+    from app.database.models_cloud import CompanyUser, Company
     from sqlalchemy.orm import joinedload
     
     db = SessionLocal()

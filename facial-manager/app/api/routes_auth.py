@@ -240,7 +240,7 @@ async def invite_user_to_company(
     """
     try:
         from app.database.database import SessionLocal
-        from app.database.models_supabase import CompanyUser
+        from app.database.models_cloud import CompanyUser
         
         db = SessionLocal()
         try:

@@ -10,7 +10,7 @@ from collections import defaultdict
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func
 
-from app.database.models_supabase import (
+from app.database.models_cloud import (
     EmployeeSupabase, TimeRecord, Company
 )
 

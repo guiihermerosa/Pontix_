@@ -10,9 +10,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.auth.permissions import (
-    get_current_user, check_permission, Permissions
+    get_current_user, Permissions
 )
 from app.database.database import get_db
+from app.dependencies import validate_company_access
 from app.services.attendance_view_service import AttendanceViewService
 
 router = APIRouter(prefix="/time-view", tags=["Visualização de Batidas"])
@@ -28,7 +29,7 @@ async def get_monthly_time_view(
     include_stats: bool = Query(True, description="Incluir estatísticas"),
     user: Dict[str, Any] = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _ = Depends(check_permission(Permissions.TIMERECORD_VIEW, company_id=company_id))
+    _: Any = Depends(validate_company_access)
 ):
     """
     Retorna visualização mensal (espelho de ponto).
@@ -80,7 +81,7 @@ async def get_daily_time_view(
     employee_id: Optional[UUID] = Query(None, description="ID do funcionário (opcional)"),
     user: Dict[str, Any] = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _ = Depends(check_permission(Permissions.TIMERECORD_VIEW, company_id=company_id))
+    _: Any = Depends(validate_company_access)
 ):
     """
     Retorna visualização detalhada de um dia específico.
@@ -135,7 +136,7 @@ async def get_employee_timeline(
     Verifica se o usuário tem acesso à empresa do funcionário.
     """
     try:
-        from app.database.models_supabase import EmployeeSupabase, CompanyUser
+        from app.database.models_cloud import EmployeeSupabase, CompanyUser
         
         # Obtém funcionário e verifica acesso
         employee = db.query(EmployeeSupabase).filter(
@@ -214,7 +215,7 @@ async def get_employee_summary(
     Retorna resumo mensal de um funcionário.
     """
     try:
-        from app.database.models_supabase import EmployeeSupabase, CompanyUser
+        from app.database.models_cloud import EmployeeSupabase, CompanyUser
         
         # Obtém funcionário e verifica acesso
         employee = db.query(EmployeeSupabase).filter(
@@ -298,7 +299,7 @@ async def get_company_daily_summary(
     target_date: Optional[date] = Query(None, description="Data (opcional, padrão: hoje)"),
     user: Dict[str, Any] = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _ = Depends(check_permission(Permissions.TIMERECORD_VIEW, company_id=company_id))
+    _: Any = Depends(validate_company_access)
 ):
     """
     Retorna resumo diário de toda a empresa.
@@ -368,13 +369,13 @@ async def get_time_view_filters(
     company_id: UUID,
     user: Dict[str, Any] = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _ = Depends(check_permission(Permissions.TIMERECORD_VIEW, company_id=company_id))
+    _: Any = Depends(validate_company_access)
 ):
     """
     Retorna opções de filtro para visualização de batidas.
     """
     try:
-        from app.database.models_supabase import EmployeeSupabase
+        from app.database.models_cloud import EmployeeSupabase
         
         # Obtém funcionários ativos
         employees = db.query(EmployeeSupabase).filter(
@@ -384,7 +385,7 @@ async def get_time_view_filters(
         
         # Obtém anos/meses com registros
         from sqlalchemy import extract
-        from app.database.models_supabase import TimeRecord
+        from app.database.models_cloud import TimeRecord
         
         years_with_data = db.query(
             extract('year', TimeRecord.record_date).label('year')
@@ -456,7 +457,7 @@ async def export_monthly_view(
     format: str = Query("json", description="Formato: json, csv, excel"),
     user: Dict[str, Any] = Depends(get_current_user),
     db: Session = Depends(get_db),
-    _ = Depends(check_permission(Permissions.REPORT_EXPORT, company_id=company_id))
+    _: Any = Depends(validate_company_access)
 ):
     """
     Exporta visualização mensal em diferentes formatos.

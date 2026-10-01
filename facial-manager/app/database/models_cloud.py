@@ -12,13 +12,13 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 
-from app.database.database import Base
+from app.database.database import CloudBase
 
 
 # ---------------------------------------------------------------------------
 # Empresas
 # ---------------------------------------------------------------------------
-class Company(Base):
+class Company(CloudBase):
     __tablename__ = "companies"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True)
@@ -64,7 +64,7 @@ class Company(Base):
 # ---------------------------------------------------------------------------
 # Usuários do Sistema (relacionamento com Supabase Auth)
 # ---------------------------------------------------------------------------
-class CompanyUser(Base):
+class CompanyUser(CloudBase):
     __tablename__ = "company_users"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True)
@@ -91,7 +91,7 @@ class CompanyUser(Base):
 # ---------------------------------------------------------------------------
 # Funcionários (Cloud)
 # ---------------------------------------------------------------------------
-class EmployeeSupabase(Base):
+class EmployeeSupabase(CloudBase):
     __tablename__ = "employees"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True)
@@ -124,7 +124,7 @@ class EmployeeSupabase(Base):
 # ---------------------------------------------------------------------------
 # Registros de Ponto (Cloud)
 # ---------------------------------------------------------------------------
-class TimeRecord(Base):
+class TimeRecord(CloudBase):
     __tablename__ = "time_records"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True)
@@ -158,7 +158,7 @@ class TimeRecord(Base):
 # ---------------------------------------------------------------------------
 # Períodos de Trabalho
 # ---------------------------------------------------------------------------
-class WorkPeriod(Base):
+class WorkPeriod(CloudBase):
     __tablename__ = "work_periods"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True)
@@ -186,7 +186,7 @@ class WorkPeriod(Base):
 # ---------------------------------------------------------------------------
 # Ocorrências
 # ---------------------------------------------------------------------------
-class Occurrence(Base):
+class Occurrence(CloudBase):
     __tablename__ = "occurrences"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True)
@@ -214,7 +214,7 @@ class Occurrence(Base):
 # ---------------------------------------------------------------------------
 # Justificativas
 # ---------------------------------------------------------------------------
-class Justification(Base):
+class Justification(CloudBase):
     __tablename__ = "justifications"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True)
@@ -243,7 +243,7 @@ class Justification(Base):
 # ---------------------------------------------------------------------------
 # Logs de Auditoria
 # ---------------------------------------------------------------------------
-class AuditLog(Base):
+class AuditLog(CloudBase):
     __tablename__ = "audit_logs"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True)
@@ -266,7 +266,7 @@ class AuditLog(Base):
 # ---------------------------------------------------------------------------
 # Logs de Sincronização
 # ---------------------------------------------------------------------------
-class SyncLog(Base):
+class SyncLog(CloudBase):
     __tablename__ = "sync_logs"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True)
@@ -289,7 +289,7 @@ class SyncLog(Base):
 # ---------------------------------------------------------------------------
 # Relatórios
 # ---------------------------------------------------------------------------
-class Report(Base):
+class Report(CloudBase):
     __tablename__ = "reports"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True)
@@ -317,7 +317,7 @@ class Report(Base):
 # ---------------------------------------------------------------------------
 # Modelos de E-mail
 # ---------------------------------------------------------------------------
-class EmailTemplate(Base):
+class EmailTemplate(CloudBase):
     __tablename__ = "email_templates"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, index=True)

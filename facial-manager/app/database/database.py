@@ -46,6 +46,11 @@ class Base(DeclarativeBase):
     pass
 
 
+class CloudBase(DeclarativeBase):
+    """Separate Base for Supabase cloud models to avoid table conflicts."""
+    pass
+
+
 def get_db():
     """Dependency para injeção do banco nas rotas FastAPI."""
     db = SessionLocal()

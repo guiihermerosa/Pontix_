@@ -25,7 +25,7 @@ from uuid import UUID
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from app.database.models_supabase import (
+from app.database.models_cloud import (
     Occurrence,
     TimeRecord,
     EmployeeSupabase,

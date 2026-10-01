@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.database.database import SessionLocal, engine
-from app.database.models_supabase import Base, Company, CompanyUser, EmployeeSupabase
+from app.database.models_cloud import Base, Company, CompanyUser, EmployeeSupabase
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 

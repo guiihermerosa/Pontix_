@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.permissions import get_current_user, Permissions
 from app.database.database import get_db
-from app.database.models_supabase import (
+from app.database.models_cloud import (
     Company, CompanyUser, EmployeeSupabase, TimeRecord, 
     WorkPeriod, Occurrence, Justification
 )
