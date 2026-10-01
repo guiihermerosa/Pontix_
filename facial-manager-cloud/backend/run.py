@@ -10,13 +10,20 @@ if __name__ == "__main__":
     print("  Acesse via: http://localhost:8001")
     print("=" * 60)
     
-    # Detecta ambiente (Render usa variável RENDER)
-    is_production = os.getenv("RENDER") is not None
+    # Detecta ambiente (Render, Heroku, ou outro PaaS)
+    is_production = any([
+        os.getenv("RENDER") is not None,
+        os.getenv("HEROKU") is not None,
+        os.getenv("VERCEL") is not None,
+        os.getenv("ENVIRONMENT") == "production",
+    ])
+    
+    print(f"[DEBUG] is_production={is_production}, RENDER={os.getenv('RENDER')}")
     
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
         port=8001,
-        reload=not is_production,  # Disable reload em produção
+        reload=False,  # Sempre desabilita reload em produção
         log_level="info"
     )
