@@ -84,7 +84,7 @@
 
 <script>
 import { api } from '@/services/api'
-import { formatISO, formatDate as fnsFormatDate } from 'date-fns'
+import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default {
@@ -177,7 +177,7 @@ export default {
     formatDate(dateString) {
       if (!dateString) return '-'
       try {
-        return fnsFormatDate(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR })
+        return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR })
       } catch {
         return dateString
       }
